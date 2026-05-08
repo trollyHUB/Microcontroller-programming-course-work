@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXIS Wellness Station</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">N</div>
+      <div class="logo-text">
+        <span class="logo-title">NEXIS</span>
+        <span class="logo-sub">Wellness Station</span>
+      </div>
+    </div>
+    <button class="sidebar-toggle" id="sidebarToggle" title="Свернуть">&#x2190;</button>
+  </div>
+
+  <!-- Режим работы -->
+  <div class="mode-switcher">
+    <div class="mode-label">Режим данных</div>
+    <div class="mode-btns">
+      <button class="mode-btn" data-mode="off" title="Отключено">&#9632;</button>
+      <button class="mode-btn active" data-mode="demo" title="Демо">&#9670;</button>
+      <button class="mode-btn" data-mode="live" title="ESP32 Live">&#9679;</button>
+    </div>
+    <div class="mode-status" id="modeStatus">Демо-режим</div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section-label">Мониторинг</div>
+    <a class="nav-item active" data-page="dashboard" href="#">
+      <span class="nav-icon">&#9783;</span>
+      <span class="nav-text">Dashboard</span>
+    </a>
+    <a class="nav-item" data-page="sensor-temp" href="#">
+      <span class="nav-icon">&#127777;</span>
+      <span class="nav-text">Температура</span>
+      <span class="nav-badge" id="nb-temp">--°</span>
+    </a>
+    <a class="nav-item" data-page="sensor-hum" href="#">
+      <span class="nav-icon">&#128167;</span>
+      <span class="nav-text">Влажность</span>
+      <span class="nav-badge" id="nb-hum">--%</span>
+    </a>
+    <a class="nav-item" data-page="sensor-co2" href="#">
+      <span class="nav-icon">&#127807;</span>
+      <span class="nav-text">CO₂ / Воздух</span>
+      <span class="nav-badge" id="nb-co2">--</span>
+    </a>
+    <a class="nav-item" data-page="sensor-light" href="#">
+      <span class="nav-icon">&#128161;</span>
+      <span class="nav-text">Освещённость</span>
+      <span class="nav-badge" id="nb-light">--</span>
+    </a>
+    <a class="nav-item" data-page="sensor-noise" href="#">
+      <span class="nav-icon">&#128266;</span>
+      <span class="nav-text">Шум</span>
+      <span class="nav-badge" id="nb-noise">--</span>
+    </a>
+    <a class="nav-item" data-page="sensor-motion" href="#">
+      <span class="nav-icon">&#128100;</span>
+      <span class="nav-text">Движение</span>
+      <span class="nav-badge" id="nb-motion">--</span>
+    </a>
+    <a class="nav-item" data-page="sensor-pressure" href="#">
+      <span class="nav-icon">&#127966;</span>
+      <span class="nav-text">Давление</span>
+      <span class="nav-badge" id="nb-pressure">--</span>
+    </a>
+
+    <a class="nav-item" data-page="analytics" href="#">
+      <span class="nav-icon">&#128200;</span>
+      <span class="nav-text">Аналитика</span>
+    </a>
+
+    <div class="nav-section-label">Продуктивность</div>
+    <a class="nav-item" data-page="pomodoro" href="#">
+      <span class="nav-icon">&#127813;</span>
+      <span class="nav-text">Pomodoro</span>
+    </a>
+    <a class="nav-item" data-page="logs" href="#">
+      <span class="nav-icon">&#128203;</span>
+      <span class="nav-text">Журнал</span>
+      <span class="nav-badge log-badge" id="nb-logs">0</span>
+    </a>
+
+    <div class="nav-section-label">О проекте</div>
+    <a class="nav-item" data-page="about" href="#">
+      <span class="nav-icon">&#127968;</span>
+      <span class="nav-text">О станции</span>
+    </a>
+    <a class="nav-item" data-page="coursework" href="#">
+      <span class="nav-icon">&#128218;</span>
+      <span class="nav-text">Курсовая работа</span>
+    </a>
+    <a class="nav-item" data-page="settings" href="#">
+      <span class="nav-icon">&#9881;</span>
+      <span class="nav-text">Настройки</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="esp-status" id="espStatus">
+      <div class="esp-dot" id="espDot"></div>
+      <span id="espText">Нет связи</span>
+    </div>
+    <div class="sidebar-time" id="sidebarTime"></div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">
+      <span class="theme-btn-icon" id="themeIcon">☀️</span>
+      <span class="theme-btn-label" id="themeLabel">Светлая тема</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="main" id="main">
+
+  <!-- Мобильный header -->
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn">&#9776;</button>
+    <span class="topbar-title" id="topbarTitle">Dashboard</span>
+    <div class="topbar-right">
+      <span class="topbar-time" id="topbarTime"></span>
+    </div>
+  </header>
+
+  <!-- ═══ СТРАНИЦА: DASHBOARD ═══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-desc">Общий мониторинг рабочей среды в реальном времени</p>
+    </div>
+
+    <!-- Плитка датчиков -->
+    <div class="sensor-tiles">
+      <div class="tile clickable" data-goto="sensor-temp" id="tile-temp">
+        <div class="tile-top">
+          <span class="tile-icon">&#127777;</span>
+          <span class="tile-label">Температура</span>
+        </div>
+        <div class="tile-value"><span id="d-temp">--</span><span class="tile-unit" id="tu-unit">°C</span></div>
+        <div class="tile-status" id="ds-temp">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-temp"></div></div>
+        <div class="spark-wrap"><canvas id="spark-temp"></canvas></div>
+      </div>
+      <div class="tile clickable" data-goto="sensor-hum" id="tile-hum">
+        <div class="tile-top">
+          <span class="tile-icon">&#128167;</span>
+          <span class="tile-label">Влажность</span>
+        </div>
+        <div class="tile-value"><span id="d-hum">--</span><span class="tile-unit">%</span></div>
+        <div class="tile-status" id="ds-hum">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-hum"></div></div>
+        <div class="spark-wrap"><canvas id="spark-hum"></canvas></div>
+      </div>
+      <div class="tile clickable" data-goto="sensor-co2" id="tile-co2">
+        <div class="tile-top">
+          <span class="tile-icon">&#127807;</span>
+          <span class="tile-label">CO₂ / Воздух</span>
+        </div>
+        <div class="tile-value"><span id="d-co2">--</span><span class="tile-unit">ppm</span></div>
+        <div class="tile-status" id="ds-co2">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-co2"></div></div>
+        <div class="spark-wrap"><canvas id="spark-co2"></canvas></div>
+      </div>
+      <div class="tile clickable" data-goto="sensor-light" id="tile-light">
+        <div class="tile-top">
+          <span class="tile-icon">&#128161;</span>
+          <span class="tile-label">Освещённость</span>
+        </div>
+        <div class="tile-value"><span id="d-light">--</span><span class="tile-unit">lux</span></div>
+        <div class="tile-status" id="ds-light">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-light"></div></div>
+        <div class="spark-wrap"><canvas id="spark-light"></canvas></div>
+      </div>
+      <div class="tile clickable" data-goto="sensor-noise" id="tile-noise">
+        <div class="tile-top">
+          <span class="tile-icon">&#128266;</span>
+          <span class="tile-label">Уровень шума</span>
+        </div>
+        <div class="tile-value"><span id="d-noise">--</span><span class="tile-unit">dB</span></div>
+        <div class="tile-status" id="ds-noise">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-noise"></div></div>
+        <div class="spark-wrap"><canvas id="spark-noise"></canvas></div>
+      </div>
+      <div class="tile clickable" data-goto="sensor-motion" id="tile-motion">
+        <div class="tile-top">
+          <span class="tile-icon">&#128100;</span>
+          <span class="tile-label">Присутствие</span>
+        </div>
+        <div class="tile-value-text" id="d-motion">--</div>
+        <div class="tile-status" id="ds-motion">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-motion"></div></div>
+      </div>
+      <div class="tile clickable pressure-tile" data-goto="sensor-pressure" id="tile-pressure">
+        <div class="tile-top">
+          <span class="tile-icon">&#127966;</span>
+          <span class="tile-label">Давление</span>
+        </div>
+        <div class="tile-value"><span id="d-pressure">--</span><span class="tile-unit">hPa</span></div>
+        <div class="tile-status" id="ds-pressure">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-pressure"></div></div>
+      </div>
+    </div>
+
+    <!-- График + Pomodoro мини -->
+    <div class="dash-mid">
+      <div class="dash-chart-card">
+        <div class="card-header">
+          <span class="card-title">График за 24 часа</span>
+          <div class="chart-tabs">
+            <button class="ctab active" data-m="temperature">Температура</button>
+            <button class="ctab" data-m="humidity">Влажность</button>
+            <button class="ctab" data-m="co2">CO₂</button>
+            <button class="ctab" data-m="light">Свет</button>
+            <button class="ctab" data-m="noise">Шум</button>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+      </div>
+      <div class="dash-pomo-card">
+        <div class="card-title">&#127813; Pomodoro</div>
+        <div class="mini-pomo-timer" id="miniPomoTimer">25:00</div>
+        <div class="mini-pomo-phase" id="miniPomoPhase">Готов к работе</div>
+        <div class="mini-pomo-dots" id="miniPomoDots"></div>
+        <div class="mini-pomo-btns">
+          <button class="btn-start" id="miniPomoStart" onclick="pomodoro.toggle()">▶ Старт</button>
+        </div>
+        <div class="mini-pomo-stats">
+          <div class="mps"><span id="miniPomoCycles">0</span><small>Сегодня</small></div>
+          <div class="mps"><span id="miniPomoMins">0</span><small>Минут</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Статистика + алерты -->
+    <div class="dash-bottom">
+      <div class="stats-card">
+        <div class="card-title">&#128202; Статистика за сегодня</div>
+        <div class="stats-grid">
+          <div class="stat-box"><span id="st-avgTemp">--</span><small>Ср. T°</small></div>
+          <div class="stat-box"><span id="st-avgHum">--</span><small>Ср. влажность</small></div>
+          <div class="stat-box"><span id="st-avgCo2">--</span><small>Ср. CO₂</small></div>
+          <div class="stat-box"><span id="st-maxCo2">--</span><small>Макс CO₂</small></div>
+          <div class="stat-box"><span id="st-pomo">--</span><small>Pomodoro</small></div>
+          <div class="stat-box"><span id="st-readings">--</span><small>Измерений</small></div>
+        </div>
+      </div>
+      <div class="alerts-card">
+        <div class="card-title">&#128276; Уведомления</div>
+        <div class="alerts-list" id="dashAlerts"><div class="no-alerts">Нет уведомлений</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ СТРАНИЦА: АНАЛИТИКА ═══ -->
+  <div class="page" id="page-analytics">
+    <div class="page-header">
+      <h1 class="page-title">&#128200; Аналитика</h1>
+      <p class="page-desc">Графики и статистика за выбранный период</p>
+    </div>
+
+    <div class="analytics-toolbar">
+      <div class="analytics-period-btns">
+        <button class="apb active" onclick="loadAnalytics(24);  this.closest('.analytics-period-btns').querySelectorAll('.apb').forEach(b=>b.classList.remove('active')); this.classList.add('active')">24 ч</button>
+        <button class="apb"        onclick="loadAnalytics(72);  this.closest('.analytics-period-btns').querySelectorAll('.apb').forEach(b=>b.classList.remove('active')); this.classList.add('active')">3 дня</button>
+        <button class="apb"        onclick="loadAnalytics(168); this.closest('.analytics-period-btns').querySelectorAll('.apb').forEach(b=>b.classList.remove('active')); this.classList.add('active')">7 дней</button>
+      </div>
+      <span class="analytics-status" id="analyticsStatus"></span>
+    </div>
+
+    <div class="analytics-chart-card">
+      <div class="card-title">Температура и CO₂</div>
+      <div class="analytics-chart-wrap"><canvas id="analyticsChart"></canvas></div>
+    </div>
+
+    <div class="analytics-stats-section">
+      <div class="card-title" style="margin-bottom:14px">Сводная статистика</div>
+      <div class="analytics-stats-grid" id="analyticsStatsGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ СТРАНИЦЫ ДАТЧИКОВ (общий шаблон через JS) ═══ -->
+  <div class="page" id="page-sensor-temp"></div>
+  <div class="page" id="page-sensor-hum"></div>
+  <div class="page" id="page-sensor-co2"></div>
+  <div class="page" id="page-sensor-light"></div>
+  <div class="page" id="page-sensor-noise"></div>
+  <div class="page" id="page-sensor-motion"></div>
+  <div class="page" id="page-sensor-pressure"></div>
+
+  <!-- ═══ СТРАНИЦА: POMODORO ═══ -->
+  <div class="page" id="page-pomodoro">
+    <div class="page-header">
+      <h1 class="page-title">&#127813; Pomodoro Таймер</h1>
+      <p class="page-desc">Техника управления временем для максимальной продуктивности</p>
+    </div>
+    <div class="pomo-layout">
+      <div class="pomo-main">
+        <div class="pomo-ring-wrap">
+          <svg class="pomo-ring" viewBox="0 0 200 200">
+            <circle class="ring-bg" cx="100" cy="100" r="88"/>
+            <circle class="ring-fill" id="pomoRing" cx="100" cy="100" r="88"
+              stroke-dasharray="553" stroke-dashoffset="0"/>
+          </svg>
+          <div class="pomo-center">
+            <div class="pomo-big-time" id="pomoTime">25:00</div>
+            <div class="pomo-big-phase" id="pomoPhase">Работа</div>
+          </div>
+        </div>
+        <div class="pomo-controls">
+          <button class="pomo-btn-main" id="pomoBtn" onclick="pomodoro.toggle()">▶ Старт</button>
+          <button class="pomo-btn-reset" onclick="pomodoro.reset()">&#8635; Сброс</button>
+        </div>
+        <div class="pomo-dots-row" id="pomoDots"></div>
+        <div class="pomo-mode-row">
+          <button class="pomo-mode active" data-work="25" data-break="5" onclick="pomodoro.setMode(this)">25/5</button>
+          <button class="pomo-mode" data-work="50" data-break="10" onclick="pomodoro.setMode(this)">50/10</button>
+          <button class="pomo-mode" data-work="90" data-break="20" onclick="pomodoro.setMode(this)">90/20</button>
+        </div>
+        <div class="pomo-custom-row">
+          <span class="pomo-custom-label">Своё время:</span>
+          <input type="number" id="customWork" class="pomo-custom-input" min="1" max="120" value="25" title="Минуты работы">
+          <span class="pomo-custom-sep">мин /</span>
+          <input type="number" id="customBreak" class="pomo-custom-input" min="1" max="60" value="5" title="Минуты перерыва">
+          <span class="pomo-custom-sep">мин</span>
+          <button class="pomo-custom-btn" onclick="pomodoro.applyCustom()">Применить</button>
+        </div>
+      </div>
+      <div class="pomo-side">
+        <div class="pomo-info-card">
+          <div class="card-title">&#128200; Статистика сессии</div>
+          <div class="pomo-stats-list">
+            <div class="psl"><span>Циклов сегодня</span><b id="ps-today">0</b></div>
+            <div class="psl"><span>Минут фокуса</span><b id="ps-mins">0</b></div>
+            <div class="psl"><span>Текущий режим</span><b id="ps-mode">25/5</b></div>
+            <div class="psl"><span>Статус</span><b id="ps-status">Остановлен</b></div>
+          </div>
+        </div>
+        <div class="pomo-info-card">
+          <div class="card-title">&#128218; Техника Pomodoro</div>
+          <div class="pomo-desc">
+            <p>Метод управления временем, разработанный Франческо Чирилло в конце 1980-х. Работа разбивается на 25-минутные интервалы («помодоро»), разделённые короткими перерывами.</p>
+            <div class="pomo-steps">
+              <div class="ps-step"><span class="ps-num">1</span>Выбери задачу</div>
+              <div class="ps-step"><span class="ps-num">2</span>Работай 25 минут</div>
+              <div class="ps-step"><span class="ps-num">3</span>Перерыв 5 минут</div>
+              <div class="ps-step"><span class="ps-num">4</span>После 4 помодоро — длинный перерыв</div>
+            </div>
+          </div>
+        </div>
+        <div class="pomo-info-card">
+          <div class="card-title">&#9881; История сегодня</div>
+          <div class="pomo-history" id="pomoHistory"><div class="no-alerts">Пока нет циклов</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ СТРАНИЦА: ЖУРНАЛ ═══ -->
+  <div class="page" id="page-logs">
+    <div class="page-header">
+      <h1 class="page-title">&#128203; Журнал событий</h1>
+      <p class="page-desc">Полная история всех действий и событий системы</p>
+    </div>
+    <div class="logs-toolbar">
+      <div class="log-filters">
+        <button class="lf-btn active" data-filter="all">Все</button>
+        <button class="lf-btn" data-filter="sensor">Датчики</button>
+        <button class="lf-btn" data-filter="alert">Алерты</button>
+        <button class="lf-btn" data-filter="pomodoro">Pomodoro</button>
+        <button class="lf-btn" data-filter="system">Система</button>
+      </div>
+      <button class="log-clear-btn" onclick="logger.clear()">&#128465; Очистить</button>
+    </div>
+    <div class="logs-container" id="logsContainer"></div>
+  </div>
+
+  <!-- ═══ СТРАНИЦА: О СТАНЦИИ ═══ -->
+  <div class="page" id="page-about">
+    <div class="page-header">
+      <h1 class="page-title">&#127968; О NEXIS Wellness Station</h1>
+      <p class="page-desc">Персональная интеллектуальная IoT-станция мониторинга</p>
+    </div>
+    <div class="about-layout">
+      <div class="about-hero">
+        <div class="about-logo-big">N</div>
+        <div class="about-hero-text">
+          <h2>NEXIS Wellness Station</h2>
+          <p>Интеллектуальное устройство для мониторинга параметров рабочего места и повышения личной продуктивности на базе ESP32.</p>
+          <div class="about-tags">
+            <span class="atag">ESP32</span><span class="atag">IoT</span><span class="atag">FastAPI</span>
+            <span class="atag">REST API</span><span class="atag">WebSocket</span><span class="atag">SQLite</span>
+            <span class="atag">BME280</span><span class="atag">Winsen ZM106-VOC</span><span class="atag">LCD 1602</span>
+          </div>
+        </div>
+      </div>
+      <div class="about-grid">
+        <div class="about-card">
+          <div class="ac-icon">&#127760;</div>
+          <div class="ac-title">Университет</div>
+          <div class="ac-text">ЕНУ им. Л.Н. Гумилёва<br>Кафедра «Вычислительная техника и ПО»</div>
+        </div>
+        <div class="about-card">
+          <div class="ac-icon">&#128218;</div>
+          <div class="ac-title">Дисциплина</div>
+          <div class="ac-text">PM3304<br>«Программирование микроконтроллеров»</div>
+        </div>
+        <div class="about-card">
+          <div class="ac-icon">&#128106;</div>
+          <div class="ac-title">Руководитель</div>
+          <div class="ac-text">Байдельдинов М.У.<br>к.т.н., и.о. доцента</div>
+        </div>
+        <div class="about-card">
+          <div class="ac-icon">&#128197;</div>
+          <div class="ac-title">Период</div>
+          <div class="ac-text">Февраль — Май 2026<br>Защита: Июнь 2026</div>
+        </div>
+      </div>
+      <div class="about-features">
+        <h3>Ключевые функции системы</h3>
+        <div class="af-grid">
+          <div class="af-item"><span>&#127777;</span> Мониторинг температуры и влажности</div>
+          <div class="af-item"><span>&#127807;</span> Анализ качества воздуха (CO₂/VOC)</div>
+          <div class="af-item"><span>&#128161;</span> Контроль освещённости рабочего места</div>
+          <div class="af-item"><span>&#128266;</span> Мониторинг уровня шума</div>
+          <div class="af-item"><span>&#128100;</span> Детекция присутствия (PIR датчик)</div>
+          <div class="af-item"><span>&#127813;</span> Таймер продуктивности Pomodoro</div>
+          <div class="af-item"><span>&#128202;</span> Аналитика и история за 30 дней</div>
+          <div class="af-item"><span>&#128203;</span> Журнал всех событий системы</div>
+          <div class="af-item"><span>&#128276;</span> Умные алерты по пороговым значениям</div>
+          <div class="af-item"><span>&#128241;</span> Telegram Bot для управления</div>
+        </div>
+      </div>
+      <div class="about-arch">
+        <h3>Архитектура системы</h3>
+        <div class="arch-diagram">
+          <div class="arch-box esp">ESP32<br><small>Датчики + Прошивка C++</small></div>
+          <div class="arch-arrow">&#8594; REST API &#8594;</div>
+          <div class="arch-box flask">Python FastAPI<br><small>Сервер + SQLite</small></div>
+          <div class="arch-arrow">&#8594; WebSocket &#8594;</div>
+          <div class="arch-box web">Dashboard<br><small>HTML + JS + CSS</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ СТРАНИЦА: КУРСОВАЯ РАБОТА ═══ -->
+  <div class="page" id="page-coursework">
+    <div class="page-header">
+      <h1 class="page-title">&#128218; Курсовая работа</h1>
+      <p class="page-desc">PM3304 — Программирование микроконтроллеров, ЕНУ им. Л.Н. Гумилёва</p>
+    </div>
+    <div class="cw-layout">
+      <!-- Оглавление -->
+      <div class="cw-toc">
+        <div class="toc-title">Содержание</div>
+        <div class="toc-items">
+          <a class="toc-item" href="#cw-title">Титульный лист</a>
+          <a class="toc-item" href="#cw-intro">Введение</a>
+          <a class="toc-item" href="#cw-ch1">Глава 1. Теоретическая часть</a>
+          <a class="toc-item toc-sub" href="#cw-11">1.1 Обзор IoT-систем</a>
+          <a class="toc-item toc-sub" href="#cw-12">1.2 Микроконтроллер ESP32</a>
+          <a class="toc-item toc-sub" href="#cw-13">1.3 Датчики и интерфейсы</a>
+          <a class="toc-item" href="#cw-ch2">Глава 2. Практическая часть</a>
+          <a class="toc-item toc-sub" href="#cw-21">2.1 Схема подключения</a>
+          <a class="toc-item toc-sub" href="#cw-22">2.2 Программная архитектура</a>
+          <a class="toc-item toc-sub" href="#cw-23">2.3 Web-интерфейс</a>
+          <a class="toc-item" href="#cw-conclusion">Заключение</a>
+          <a class="toc-item" href="#cw-refs">Список литературы</a>
+        </div>
+        <div class="cw-status">
+          <div class="cws-item done">&#10003; Введение</div>
+          <div class="cws-item done">&#10003; Глава 1</div>
+          <div class="cws-item done">&#10003; Глава 2</div>
+          <div class="cws-item done">&#10003; Заключение</div>
+          <div class="cws-item done">&#10003; Список литературы</div>
+        </div>
+      </div>
+      <!-- Текст -->
+      <div class="cw-content">
+        <div class="cw-section" id="cw-title">
+          <div class="cw-titlepage">
+            <div class="cwt-uni">МИНИСТЕРСТВО ОБРАЗОВАНИЯ И НАУКИ РЕСПУБЛИКИ КАЗАХСТАН</div>
+            <div class="cwt-uni">НАО «Евразийский национальный университет имени Л.Н. Гумилёва»</div>
+            <div class="cwt-dept">Факультет информационных технологий<br>Кафедра «Вычислительная техника и программное обеспечение»</div>
+            <div class="cwt-type">КУРСОВАЯ РАБОТА</div>
+            <div class="cwt-discipline">по дисциплине: PM3304 «Программирование микроконтроллеров»</div>
+            <div class="cwt-topic-label">Тема:</div>
+            <div class="cwt-topic">«NEXIS Wellness Station — Персональная станция мониторинга здоровья и продуктивности на базе ESP32»</div>
+            <div class="cwt-meta">
+              <div class="cwt-row"><span>Выполнил:</span><span class="cwt-line">студент гр. ________________</span></div>
+              <div class="cwt-row"><span>Руководитель:</span><span>Байдельдинов М.У., к.т.н., и.о. доцента</span></div>
+              <div class="cwt-row"><span>Оценка:</span><span class="cwt-line">_______________</span></div>
+            </div>
+            <div class="cwt-city">Астана, 2026</div>
+          </div>
+        </div>
+
+        <div class="cw-section" id="cw-intro">
+          <h2 class="cw-h2">Введение</h2>
+          <p>В современном мире значительная часть населения проводит рабочее время в закрытых помещениях перед компьютером. По статистике, офисные работники и IT-специалисты проводят более 8 часов в день в сидячем положении. При этом качество рабочей среды оказывает существенное влияние на здоровье и продуктивность человека.</p>
+          <p>Исследования показывают, что повышенный уровень CO₂ (более 1000 ppm) снижает когнитивные способности на 15–50%, недостаточная освещённость приводит к усталости глаз и снижению концентрации, а высокий уровень шума негативно сказывается на качестве выполняемой работы. Согласно данным ВОЗ, 76% IT-специалистов сталкиваются с профессиональным выгоранием, которое во многом обусловлено неправильной организацией рабочего пространства.</p>
+          <p><strong>Актуальность</strong> данного проекта обусловлена необходимостью создания доступного и функционального инструмента для мониторинга параметров рабочего места и повышения личной продуктивности.</p>
+          <p><strong>Цель работы</strong> — разработка интеллектуальной IoT-станции для мониторинга микроклимата рабочего места и управления продуктивностью на базе микроконтроллера ESP32.</p>
+          <p><strong>Задачи проекта:</strong></p>
+          <ul class="cw-list">
+            <li>Изучить архитектуру микроконтроллера ESP32 и его возможности для IoT-разработки;</li>
+            <li>Выбрать и обосновать набор датчиков для мониторинга рабочей среды;</li>
+            <li>Разработать программное обеспечение для сбора, обработки и передачи данных;</li>
+            <li>Создать веб-интерфейс для визуализации данных в реальном времени;</li>
+            <li>Реализовать систему умных уведомлений и таймер Pomodoro;</li>
+            <li>Провести тестирование и оценку системы.</li>
+          </ul>
+          <p><strong>Объект исследования:</strong> система мониторинга параметров рабочей среды на базе микроконтроллера ESP32.</p>
+          <p><strong>Предмет исследования:</strong> методы и алгоритмы сбора, обработки и визуализации данных с датчиков в IoT-системах.</p>
+        </div>
+
+        <div class="cw-section" id="cw-ch1">
+          <h2 class="cw-h2">Глава 1. Теоретическая часть</h2>
+
+          <h3 class="cw-h3" id="cw-11">1.1 Обзор IoT-систем мониторинга рабочей среды</h3>
+          <p>Интернет вещей (IoT, Internet of Things) — концепция вычислительной сети физических объектов («вещей»), оснащённых встроенными технологиями для взаимодействия друг с другом или с внешней средой. В контексте мониторинга рабочей среды IoT-системы позволяют собирать данные с множества датчиков, обрабатывать их и предоставлять пользователю в удобном формате.</p>
+          <p>На рынке существуют коммерческие аналоги: Xiaomi Air Quality Monitor (~$60), Netatmo Healthy Home Coach (~$100), Awair Element (~$200). Однако все они имеют существенные недостатки: высокую стоимость, закрытую архитектуру и отсутствие возможности настройки под конкретные нужды пользователя. Проект NEXIS Wellness Station предлагает открытую, расширяемую альтернативу стоимостью около 15 000 тенге.</p>
+
+          <h3 class="cw-h3" id="cw-12">1.2 Микроконтроллер ESP32</h3>
+          <p>ESP32 — двухъядерный 32-битный микроконтроллер компании Espressif Systems, специально разработанный для IoT-приложений. Ключевые характеристики:</p>
+          <div class="cw-table-wrap">
+            <table class="cw-table">
+              <thead><tr><th>Параметр</th><th>Значение</th></tr></thead>
+              <tbody>
+                <tr><td>Процессор</td><td>Xtensa LX6, 2 ядра, до 240 МГц</td></tr>
+                <tr><td>Flash-память</td><td>4–16 МБ</td></tr>
+                <tr><td>SRAM</td><td>520 КБ</td></tr>
+                <tr><td>WiFi</td><td>802.11 b/g/n, 2.4 ГГц</td></tr>
+                <tr><td>Bluetooth</td><td>BT 4.2 + BLE</td></tr>
+                <tr><td>GPIO пины</td><td>34 программируемых</td></tr>
+                <tr><td>ADC</td><td>18 каналов, 12-бит</td></tr>
+                <tr><td>Интерфейсы</td><td>I2C, SPI, UART, I2S, CAN</td></tr>
+                <tr><td>Рабочее напряжение</td><td>3.3 В</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Выбор ESP32 обоснован встроенным WiFi-модулем, двухъядерной архитектурой (позволяет одновременно опрашивать датчики и обслуживать сеть), широкой экосистемой библиотек и доступной ценой (~1800 тенге).</p>
+
+          <h3 class="cw-h3" id="cw-13">1.3 Датчики и интерфейсы связи</h3>
+          <p>В проекте используется шесть различных датчиков, подключённых через три различных интерфейса:</p>
+          <p><strong>Интерфейс I2C</strong> (Inter-Integrated Circuit) — двухпроводной последовательный интерфейс, позволяющий подключить до 128 устройств на одну шину GPIO21/22. Через I2C подключены: основной датчик температуры/влажности/давления BME280 (0x76), датчик освещённости BH1750 (0x23) и дисплей LCD 1602 (0x27).</p>
+          <p><strong>Цифровой/аналоговый интерфейс</strong> используется для: DHT11 — дополнительный датчик температуры и влажности (однопроводной протокол, GPIO4), PIR HC-SR501 — датчик присутствия (цифровой выход, GPIO27), KY-037 — датчик шума (аналоговый, GPIO39), MQ-135 — дополнительный датчик CO₂ (аналоговый, GPIO36).</p>
+          <p><strong>Интерфейс UART</strong> применяется для основного датчика качества воздуха <strong>Winsen ZM106-VOC</strong>, который измеряет концентрацию CO₂ и летучих органических соединений (VOC). Датчик передаёт калиброванные данные пакетами со скоростью 9600 бод через GPIO16 (RX) и GPIO17 (TX).</p>
+        </div>
+
+        <div class="cw-section" id="cw-ch2">
+          <h2 class="cw-h2">Глава 2. Практическая часть</h2>
+
+          <h3 class="cw-h3" id="cw-21">2.1 Схема подключения компонентов</h3>
+          <p>Все компоненты подключены к плате ESP32 DevKit V1 через Expansion Board, которая обеспечивает удобный доступ ко всем пинам и стабилизированное питание.</p>
+          <div class="cw-table-wrap">
+            <table class="cw-table">
+              <thead><tr><th>Датчик</th><th>Пин(ы) ESP32</th><th>Интерфейс</th><th>Питание</th></tr></thead>
+              <tbody>
+                <tr><td>BME280 — T, H, P <em>(основной)</em></td><td>GPIO21/22 (I2C)</td><td>I2C (0x76)</td><td>3.3V</td></tr>
+                <tr><td>DHT11 — T, H <em>(доп.)</em></td><td>GPIO4</td><td>Single-wire</td><td>3.3V</td></tr>
+                <tr><td>Winsen ZM106-VOC — CO₂/VOC <em>(основной)</em></td><td>GPIO16/17 (UART)</td><td>UART 9600</td><td>5V (VIN)</td></tr>
+                <tr><td>MQ-135 — CO₂ <em>(доп.)</em></td><td>GPIO36 (ADC)</td><td>Analog</td><td>5V (VIN)</td></tr>
+                <tr><td>BH1750 (освещённость)</td><td>GPIO21/22 (I2C)</td><td>I2C (0x23)</td><td>3.3V</td></tr>
+                <tr><td>PIR HC-SR501 (присутствие)</td><td>GPIO27</td><td>Digital</td><td>5V (VIN)</td></tr>
+                <tr><td>KY-037 (шум)</td><td>GPIO39 (ADC)</td><td>Analog</td><td>3.3V</td></tr>
+                <tr><td>LCD 1602 (дисплей)</td><td>GPIO21/22 (I2C)</td><td>I2C (0x27)</td><td>5V</td></tr>
+                <tr><td>RGB LED</td><td>GPIO13/12/14</td><td>Digital PWM</td><td>3.3V</td></tr>
+                <tr><td>Зуммер</td><td>GPIO25</td><td>Digital PWM</td><td>3.3V</td></tr>
+                <tr><td>Кнопка 1</td><td>GPIO32</td><td>Digital IN</td><td>—</td></tr>
+                <tr><td>Кнопка 2</td><td>GPIO33</td><td>Digital IN</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 class="cw-h3" id="cw-22">2.2 Программная архитектура</h3>
+          <p>Система состоит из двух основных программных компонентов: прошивки ESP32 на C++ и веб-сервера на Python Flask.</p>
+          <p><strong>Прошивка ESP32</strong> написана на C++ с использованием фреймворка Arduino. Основные модули:</p>
+          <ul class="cw-list">
+            <li><em>Sensor Manager</em> — опрашивает все датчики каждые 10 секунд: BME280 (I2C), Winsen ZM106-VOC (UART), BH1750 (I2C), KY-037 (ADC), PIR (Digital), с резервным чтением DHT11 и MQ-135;</li>
+            <li><em>WiFi Client</em> — поддерживает соединение и автоматически переподключается;</li>
+            <li><em>HTTP Client</em> — отправляет JSON с данными на FastAPI-сервер;</li>
+            <li><em>Telegram Bot</em> — обрабатывает команды через HTTPS API;</li>
+            <li><em>Pomodoro Engine</em> — управляет таймером 25/5 минут;</li>
+            <li><em>Display Manager</em> — выводит данные на LCD 1602 в 4 режимах отображения.</li>
+          </ul>
+          <p><strong>Веб-сервер (FastAPI)</strong> обеспечивает асинхронный REST API для приёма данных от ESP32 и отдачи их браузеру. Данные хранятся в SQLite базе данных. Для передачи обновлений в реальном времени используется протокол WebSocket через библиотеку python-socketio.</p>
+
+          <h3 class="cw-h3" id="cw-23">2.3 Web-интерфейс</h3>
+          <p>Веб-интерфейс разработан как одностраничное приложение (SPA) с боковым меню навигации. Технологический стек: HTML5, CSS3, JavaScript (ES6+), Chart.js (графики), Socket.IO (WebSocket).</p>
+          <p>Интерфейс включает следующие разделы: общий Dashboard с 6 карточками датчиков, отдельные страницы для каждого датчика с подробной информацией, таймер Pomodoro с тремя режимами работы, журнал событий с фильтрацией, страницу о проекте и данную страницу с курсовой работой.</p>
+          <p>Особенность реализации — три режима работы: <strong>Отключено</strong> (нет данных), <strong>Демо</strong> (имитация реальных данных) и <strong>ESP32 Live</strong> (реальные данные с платы через WebSocket).</p>
+        </div>
+
+        <div class="cw-section" id="cw-conclusion">
+          <h2 class="cw-h2">Заключение</h2>
+          <p>В ходе выполнения данной курсовой работы была разработана и реализована умная IoT-станция мониторинга рабочего места <strong>NEXIS Wellness Station</strong> на базе микроконтроллера ESP32. Система обеспечивает непрерывный контроль ключевых параметров рабочей среды: температуры, влажности, атмосферного давления, концентрации летучих органических соединений (VOC/CO₂), уровня освещённости, шума и присутствия человека.</p>
+          <p>В процессе работы были достигнуты все поставленные цели: спроектирована аппаратная часть устройства с использованием датчиков на интерфейсах I2C и UART, разработан веб-сервер на базе FastAPI (Python) с хранением данных в SQLite, реализован современный веб-интерфейс в виде одностраничного приложения (SPA) с тёмной и светлой темами, интерактивными графиками реального времени и таймером Pomodoro с интеграцией датчика присутствия.</p>
+          <p>Практическая ценность проекта состоит в том, что NEXIS Wellness Station позволяет пользователю объективно оценивать условия рабочей среды и своевременно принимать меры по их улучшению. Интеграция техники Pomodoro с датчиком движения PIR HC-SR501 обеспечивает автоматическую паузу таймера при отсутствии человека за рабочим местом — что является уникальной функцией, отсутствующей в стандартных Pomodoro-приложениях.</p>
+          <p>Дальнейшее развитие проекта может включать: добавление Telegram-бота для удалённых уведомлений, разработку мобильного приложения, интеграцию с системами умного дома (Home Assistant), а также применение алгоритмов машинного обучения для прогнозирования оптимального времени работы на основе накопленной статистики.</p>
+        </div>
+
+        <div class="cw-section" id="cw-refs">
+          <h2 class="cw-h2">Список использованной литературы</h2>
+          <ol class="cw-refs-list">
+            <li>Espressif Systems. <em>ESP32 Technical Reference Manual</em>. — Espressif Systems, 2023. [Электронный ресурс] — URL: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf</li>
+            <li>Kolban N. <em>Kolban's Book on ESP32</em>. — Leanpub, 2017. — 508 с.</li>
+            <li>Bosch Sensortec. <em>BME280 Data Sheet: Environmental Sensor</em>. — BST-BME280-DS002, Rev. 1.6, 2018.</li>
+            <li>ROHM Semiconductor. <em>BH1750FVI Datasheet: Digital 16bit Serial Output Type Ambient Light Sensor IC</em>. — 2011.</li>
+            <li>FastAPI Documentation. — Sebastián Ramírez, 2024. [Электронный ресурс] — URL: https://fastapi.tiangolo.com</li>
+            <li>Гринберг М. <em>Разработка веб-приложений с помощью Flask на Python</em>. — СПб.: Питер, 2022. — 272 с.</li>
+            <li>Chart.js Documentation. — Chart.js Contributors, 2024. [Электронный ресурс] — URL: https://www.chartjs.org/docs</li>
+            <li>Socket.IO Documentation. — Guillermo Rauch, 2024. [Электронный ресурс] — URL: https://socket.io/docs</li>
+            <li>Lutz M. <em>Learning Python</em>, 5th ed. — O'Reilly Media, 2013. — 1594 с.</li>
+            <li>Monk S. <em>Programming Arduino: Getting Started with Sketches</em>, 3rd ed. — McGraw-Hill, 2022. — 224 с.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ СТРАНИЦА: НАСТРОЙКИ ═══ -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <h1 class="page-title">&#9881; Настройки</h1>
+      <p class="page-desc">Настройте пороги алертов и параметры системы</p>
+    </div>
+    <div class="settings-layout">
+
+      <!-- Пороги алертов -->
+      <div class="settings-card">
+        <div class="card-title">&#9888; Пороги алертов</div>
+        <p class="settings-hint">Жёлтый алерт — предупреждение. Красный алерт — опасность.</p>
+        <div class="settings-grid">
+
+          <div class="settings-group">
+            <div class="settings-group-title">&#127777; Температура (°C)</div>
+            <label class="settings-label">Предупреждение (&gt;)</label>
+            <input type="number" id="set-temp-warn" class="settings-input" step="0.5" min="15" max="45">
+            <label class="settings-label">Опасность (&gt;)</label>
+            <input type="number" id="set-temp-danger" class="settings-input" step="0.5" min="15" max="50">
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">&#128167; Влажность (%)</div>
+            <label class="settings-label">Предупреждение (&gt;)</label>
+            <input type="number" id="set-hum-warn" class="settings-input" min="30" max="90">
+            <label class="settings-label">Опасность (&gt;)</label>
+            <input type="number" id="set-hum-danger" class="settings-input" min="30" max="100">
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">&#127807; CO₂ (ppm)</div>
+            <label class="settings-label">Предупреждение (&gt;)</label>
+            <input type="number" id="set-co2-warn" class="settings-input" step="50" min="400" max="2000">
+            <label class="settings-label">Опасность (&gt;)</label>
+            <input type="number" id="set-co2-danger" class="settings-input" step="50" min="400" max="5000">
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">&#128161; Освещённость (lux)</div>
+            <label class="settings-label">Предупреждение (&lt;)</label>
+            <input type="number" id="set-light-warn" class="settings-input" step="10" min="0" max="1000">
+            <label class="settings-label">Опасность (&lt;)</label>
+            <input type="number" id="set-light-danger" class="settings-input" step="10" min="0" max="500">
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">&#128266; Шум (dB)</div>
+            <label class="settings-label">Предупреждение (&gt;)</label>
+            <input type="number" id="set-noise-warn" class="settings-input" min="20" max="100">
+            <label class="settings-label">Опасность (&gt;)</label>
+            <input type="number" id="set-noise-danger" class="settings-input" min="20" max="120">
+          </div>
+
+        </div>
+        <div class="settings-actions">
+          <button class="settings-btn-save" onclick="saveSettings()">&#10003; Сохранить настройки</button>
+          <button class="settings-btn-reset" onclick="resetSettings()">&#8635; Сбросить по умолчанию</button>
+        </div>
+      </div>
+
+      <!-- Экспорт данных -->
+      <div class="settings-card">
+        <div class="card-title">&#11015; Экспорт данных</div>
+        <p class="settings-hint">Скачать историю показаний датчиков в формате CSV для анализа в Excel.</p>
+        <div class="export-row">
+          <label class="settings-label">Период:</label>
+          <select id="exportHours" class="settings-select">
+            <option value="24">Последние 24 часа</option>
+            <option value="72">Последние 3 дня</option>
+            <option value="168">Последние 7 дней</option>
+            <option value="720">Последние 30 дней</option>
+          </select>
+          <button class="settings-btn-export" onclick="doExport()">&#11015; Скачать CSV</button>
+        </div>
+        <p class="settings-hint" style="margin-top:8px">Файл содержит: дата/время, температура, влажность, CO₂, освещённость, шум, движение, давление.</p>
+      </div>
+
+      <!-- Интервал демо-данных -->
+      <div class="settings-card">
+        <div class="card-title">&#9670; Интервал демо-режима</div>
+        <p class="settings-hint">Как часто обновляются данные в демо-режиме.</p>
+        <div class="tu-row">
+          <button class="di-btn" data-ms="2000" onclick="setDemoInterval(2000)">2 сек</button>
+          <button class="di-btn active" data-ms="3000" onclick="setDemoInterval(3000)">3 сек</button>
+          <button class="di-btn" data-ms="5000" onclick="setDemoInterval(5000)">5 сек</button>
+          <button class="di-btn" data-ms="10000" onclick="setDemoInterval(10000)">10 сек</button>
+        </div>
+      </div>
+
+      <!-- Единицы температуры -->
+      <div class="settings-card">
+        <div class="card-title">&#127777; Единицы температуры</div>
+        <p class="settings-hint">Выберите единицы отображения температуры. Данные всегда хранятся в °C.</p>
+        <div class="tu-row">
+          <button class="tu-btn active" data-unit="C" onclick="setTempUnit('C')">°C — Цельсий</button>
+          <button class="tu-btn"        data-unit="F" onclick="setTempUnit('F')">°F — Фаренгейт</button>
+        </div>
+      </div>
+
+      <!-- Уведомления -->
+      <div class="settings-card">
+        <div class="card-title">&#128276; Браузерные уведомления</div>
+        <p class="settings-hint">Уведомления показываются когда Pomodoro таймер завершается — даже если вкладка свёрнута.</p>
+        <button class="settings-btn-save" onclick="if('Notification' in window) Notification.requestPermission().then(p => toast.show('Разрешение: ' + p, 'info', 3000))">Разрешить уведомления</button>
+      </div>
+
+      <!-- Очистка истории -->
+      <div class="settings-card">
+        <div class="card-title">&#128465; Очистка истории</div>
+        <p class="settings-hint">Удалить все записи из базы данных датчиков. Это действие нельзя отменить.</p>
+        <button class="settings-btn-danger" onclick="clearHistory()">&#128465; Удалить историю датчиков</button>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end .main -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

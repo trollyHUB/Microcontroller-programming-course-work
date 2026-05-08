@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXIS Wellness Station</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <!-- Socket.IO -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ NAVBAR ═══ -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <div class="nav-dot" id="conn-dot"></div>
+    <span class="nav-title">NEXIS Wellness Station</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge" id="conn-status">Подключение...</span>
+    <span class="nav-time" id="nav-clock"></span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ MAIN ═══ -->
+<main class="dashboard">
+
+  <!-- ── КАРТОЧКИ ДАТЧИКОВ ── -->
+  <section class="section-header">
+    <h2 class="section-title">Показания датчиков</h2>
+    <span class="section-sub" id="last-update">Ожидание данных...</span>
+  </section>
+
+  <div class="sensors-grid">
+
+    <div class="sensor-card" id="card-temp">
+      <div class="sensor-icon">🌡</div>
+      <div class="sensor-body">
+        <div class="sensor-label">Температура</div>
+        <div class="sensor-value"><span id="val-temp">--</span><span class="sensor-unit">°C</span></div>
+        <div class="sensor-status" id="st-temp">--</div>
+      </div>
+      <div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-temp"></div></div>
+    </div>
+
+    <div class="sensor-card" id="card-hum">
+      <div class="sensor-icon">💧</div>
+      <div class="sensor-body">
+        <div class="sensor-label">Влажность</div>
+        <div class="sensor-value"><span id="val-hum">--</span><span class="sensor-unit">%</span></div>
+        <div class="sensor-status" id="st-hum">--</div>
+      </div>
+      <div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-hum"></div></div>
+    </div>
+
+    <div class="sensor-card" id="card-co2">
+      <div class="sensor-icon">🌬</div>
+      <div class="sensor-body">
+        <div class="sensor-label">CO2 / Воздух</div>
+        <div class="sensor-value"><span id="val-co2">--</span><span class="sensor-unit">ppm</span></div>
+        <div class="sensor-status" id="st-co2">--</div>
+      </div>
+      <div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-co2"></div></div>
+    </div>
+
+    <div class="sensor-card" id="card-light">
+      <div class="sensor-icon">💡</div>
+      <div class="sensor-body">
+        <div class="sensor-label">Освещённость</div>
+        <div class="sensor-value"><span id="val-light">--</span><span class="sensor-unit">lux</span></div>
+        <div class="sensor-status" id="st-light">--</div>
+      </div>
+      <div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-light"></div></div>
+    </div>
+
+    <div class="sensor-card" id="card-noise">
+      <div class="sensor-icon">🔊</div>
+      <div class="sensor-body">
+        <div class="sensor-label">Шум</div>
+        <div class="sensor-value"><span id="val-noise">--</span><span class="sensor-unit">dB</span></div>
+        <div class="sensor-status" id="st-noise">--</div>
+      </div>
+      <div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-noise"></div></div>
+    </div>
+
+    <div class="sensor-card" id="card-motion">
+      <div class="sensor-icon">👤</div>
+      <div class="sensor-body">
+        <div class="sensor-label">Движение</div>
+        <div class="sensor-value" id="val-motion" style="font-size:16px;margin-top:6px;">--</div>
+        <div class="sensor-status" id="st-motion">--</div>
+      </div>
+      <div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-motion"></div></div>
+    </div>
+
+  </div>
+
+  <!-- ── СРЕДНЯЯ СЕКЦИЯ: ГРАФИК + POMODORO ── -->
+  <div class="middle-grid">
+
+    <!-- График -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">График за 24 часа</h3>
+        <div class="chart-tabs">
+          <button class="tab-btn active" data-metric="temperature">Температура</button>
+          <button class="tab-btn" data-metric="humidity">Влажность</button>
+          <button class="tab-btn" data-metric="co2">CO2</button>
+          <button class="tab-btn" data-metric="light">Свет</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="main-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Pomodoro -->
+    <div class="pomo-card">
+      <h3 class="pomo-title">🍅 Pomodoro</h3>
+      <div class="pomo-timer" id="pomo-display">25:00</div>
+      <div class="pomo-phase" id="pomo-phase">Готов к работе</div>
+      <div class="pomo-dots" id="pomo-dots">
+        <div class="pdot"></div><div class="pdot"></div>
+        <div class="pdot"></div><div class="pdot"></div>
+        <div class="pdot"></div><div class="pdot"></div>
+        <div class="pdot"></div><div class="pdot"></div>
+      </div>
+      <div class="pomo-btn-row">
+        <button class="btn-pomo" id="pomo-start" onclick="pomodoro.start()">▶ Старт</button>
+        <button class="btn-pomo-stop" id="pomo-stop" onclick="pomodoro.stop()" style="display:none">⏹ Стоп</button>
+      </div>
+      <div class="pomo-stats">
+        <div class="pomo-stat"><span id="pomo-today">0</span><span class="pomo-stat-lbl">Сегодня</span></div>
+        <div class="pomo-stat"><span id="pomo-mins">0</span><span class="pomo-stat-lbl">Минут фокуса</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── НИЖНЯЯ СЕКЦИЯ: СТАТИСТИКА + АЛЕРТЫ ── -->
+  <div class="bottom-grid">
+
+    <!-- Статистика дня -->
+    <div class="stats-card">
+      <h3 class="card-title">📊 Статистика дня</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-val" id="stat-avg-temp">--</div>
+          <div class="stat-lbl">Средняя T°</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-avg-hum">--</div>
+          <div class="stat-lbl">Средняя влажность</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-avg-co2">--</div>
+          <div class="stat-lbl">Средний CO2</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-max-co2">--</div>
+          <div class="stat-lbl">Макс CO2</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-pomo">--</div>
+          <div class="stat-lbl">Pomodoro циклов</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-readings">--</div>
+          <div class="stat-lbl">Измерений</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Алерты -->
+    <div class="alerts-card">
+      <h3 class="card-title">🔔 Уведомления</h3>
+      <div class="alerts-list" id="alerts-list">
+        <div class="alert-empty">Нет уведомлений</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- ── TOAST-уведомление ── -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>
