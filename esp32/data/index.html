@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXIS — Live</title>
+<style>
+:root {
+  --bg:#0c0e14; --bg2:#13151f; --bg3:#1a1d2a;
+  --border:rgba(255,255,255,0.07); --text:#dde1ee;
+  --text2:#7a82a0; --text3:#444b66;
+  --green:#20c97a; --amber:#f5a623; --red:#f04040; --blue:#4d9eff;
+  --r:12px;
+  --mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh;padding:16px}
+
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--green),#0fa85e);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#000;flex-shrink:0}
+.logo-title{font-size:15px;font-weight:700}
+.logo-sub{font-size:10px;color:var(--text3)}
+.header-meta{text-align:right;font-size:11px;color:var(--text3)}
+.header-meta span{color:var(--text2)}
+
+.wellness-bar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.wi-label{font-size:12px;color:var(--text2);flex-shrink:0}
+.wi-track{flex:1;min-width:120px;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.wi-fill{height:100%;border-radius:4px;transition:width .5s,background .4s;width:0%}
+.wi-val{font-family:var(--mono);font-size:14px;font-weight:700;flex-shrink:0}
+.wi-badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;flex-shrink:0}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+.tile-icon{font-size:20px;line-height:1}
+.tile-label{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.tile-val{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1}
+.tile-unit{font-size:12px;color:var(--text3)}
+.tile-status{font-size:11px;font-weight:600;margin-top:2px}
+.tile-status.ok{color:var(--green)}
+.tile-status.warn{color:var(--amber)}
+.tile-status.danger{color:var(--red)}
+.spark{width:100%;height:32px;margin-top:6px;opacity:.6}
+.status-bar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:12px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--text3)}
+.dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.offline{background:var(--red)}
+#status-text{color:var(--text2)}
+#last-update{color:var(--text3);margin-left:auto}
+.tile.level-ok    {border-color:rgba(32,201,122,0.2)}
+.tile.level-warn  {border-color:rgba(245,166,35,0.25)}
+.tile.level-danger{border-color:rgba(240,64,64,0.3)}
+.tile.level-danger .tile-val{color:var(--red)}
+.tile.level-warn  .tile-val{color:var(--amber)}
+@media(max-width:400px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">N</div>
+    <div>
+      <div class="logo-title">NEXIS Wellness</div>
+      <div class="logo-sub">ESP32 Live Dashboard</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div>IP: <span id="esp-ip"></span></div>
+    <div>Station: <span id="esp-name">NEXIS-1</span></div>
+  </div>
+</header>
+
+<div class="wellness-bar">
+  <span class="wi-label">Wellness Index</span>
+  <div class="wi-track"><div class="wi-fill" id="wi-fill"></div></div>
+  <span class="wi-val" id="wi-val">—</span>
+  <span class="wi-badge" id="wi-badge">—</span>
+</div>
+
+<div class="grid" id="tiles"></div>
+
+<div class="status-bar">
+  <div class="dot" id="status-dot"></div>
+  <span id="status-text">Подключение...</span>
+  <span id="last-update"></span>
+</div>
+
+<script>
+const SERVER = (window.location.hostname === 'localhost' || window.location.hostname === '')
+  ? 'http://localhost:5000'
+  : 'http://' + window.location.hostname + ':5000';
+
+const POLL_MS  = 5000;
+const HIST_LEN = 20;
+
+const TILES = [
+  { id:'temp',     icon:'🌡️', label:'Температура', unit:'°C',  key:'temperature', thresholds:[27,30],   inv:false },
+  { id:'hum',      icon:'💧', label:'Влажность',   unit:'%',   key:'humidity',    thresholds:[65,75],   inv:false },
+  { id:'co2',      icon:'🌿', label:'CO₂',         unit:'ppm', key:'co2',         thresholds:[800,1200],inv:false },
+  { id:'light',    icon:'☀️', label:'Освещённость',unit:'lux', key:'light',       thresholds:[150,50],  inv:true  },
+  { id:'noise',    icon:'🔊', label:'Шум',         unit:'dB',  key:'noise',       thresholds:[55,70],   inv:false },
+  { id:'pressure', icon:'🔵', label:'Давление',    unit:'hPa', key:'pressure',    thresholds:[],        inv:false },
+  { id:'presence', icon:'👤', label:'Присутствие', unit:'',    key:'presence',    thresholds:[],        inv:false },
+];
+
+const hist = {};
+TILES.forEach(t => { hist[t.key] = []; });
+
+function calcWellness(s) {
+  function norm(v, lo, hi) { return Math.max(0, Math.min(1, (v - lo) / (hi - lo))); }
+  if (!s) return { index: 0, level: 'bad' };
+  const air   = s.co2         ? Math.max(0, 1 - norm(s.co2, 400, 1600))          : 0.5;
+  const temp  = s.temperature ? Math.max(0, 1 - Math.abs(s.temperature - 22) / 8): 0.5;
+  const hum   = s.humidity    ? Math.max(0, 1 - Math.abs(s.humidity - 50) / 30)  : 0.5;
+  const light = s.light       ? Math.min(1, s.light / 300)                        : 0.5;
+  const noise = s.noise       ? Math.max(0, 1 - norm(s.noise, 40, 80))            : 0.5;
+  const idx   = Math.round((air*0.3 + temp*0.25 + hum*0.2 + light*0.15 + noise*0.1) * 100);
+  return { index: idx, level: idx >= 80 ? 'ok' : idx >= 50 ? 'warn' : 'bad' };
+}
+
+function sparkPoints(values) {
+  if (values.length < 2) return '';
+  const W = 100, H = 32;
+  const lo = Math.min(...values), hi = Math.max(...values);
+  const range = hi - lo || 1;
+  return values.map((v, i) => {
+    const x = (i / (values.length - 1)) * W;
+    const y = H - ((v - lo) / range) * (H * 0.8) - H * 0.1;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+}
+
+function makeSvgNS(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  return el;
+}
+
+function buildTiles() {
+  const container = document.getElementById('tiles');
+  TILES.forEach(t => {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.id = 'tile-' + t.id;
+
+    const icon = document.createElement('span');
+    icon.className = 'tile-icon';
+    icon.textContent = t.icon;
+
+    const label = document.createElement('span');
+    label.className = 'tile-label';
+    label.textContent = t.label;
+
+    const val = document.createElement('span');
+    val.className = 'tile-val';
+    val.id = 'val-' + t.id;
+    val.textContent = '—';
+
+    const unit = document.createElement('span');
+    unit.className = 'tile-unit';
+    unit.textContent = t.unit;
+
+    const status = document.createElement('span');
+    status.className = 'tile-status';
+    status.id = 'st-' + t.id;
+
+    const svg = makeSvgNS('svg', { class:'spark', viewBox:'0 0 100 32', preserveAspectRatio:'none', id:'spark-' + t.id });
+    const poly = makeSvgNS('polyline', { fill:'none', stroke:'var(--blue)', 'stroke-width':'1.5', points:'', id:'sparkline-' + t.id });
+    svg.appendChild(poly);
+
+    tile.appendChild(icon);
+    tile.appendChild(label);
+    tile.appendChild(val);
+    tile.appendChild(unit);
+    tile.appendChild(status);
+    tile.appendChild(svg);
+    container.appendChild(tile);
+  });
+}
+
+function levelOf(value, thresholds, inv) {
+  if (!thresholds.length) return 'ok';
+  if (!inv) {
+    if (value >= thresholds[1]) return 'danger';
+    if (value >= thresholds[0]) return 'warn';
+    return 'ok';
+  }
+  if (value <= thresholds[1]) return 'danger';
+  if (value <= thresholds[0]) return 'warn';
+  return 'ok';
+}
+
+const LEVEL_TEXT = { ok: '✓ Норма', warn: '⚠ Внимание', danger: '✗ Опасно' };
+const LEVEL_COLOR = { ok: 'var(--green)', warn: 'var(--amber)', danger: 'var(--red)' };
+
+function updateUI(s) {
+  TILES.forEach(t => {
+    const raw  = s[t.key];
+    const valEl = document.getElementById('val-' + t.id);
+    const stEl  = document.getElementById('st-'  + t.id);
+    const tile  = document.getElementById('tile-' + t.id);
+    const line  = document.getElementById('sparkline-' + t.id);
+    if (raw === undefined || raw === null) return;
+
+    if (t.key === 'presence') {
+      valEl.textContent = raw ? 'Да' : 'Нет';
+      stEl.textContent  = '';
+      return;
+    }
+
+    const v = parseFloat(raw);
+    if (isNaN(v)) return;
+
+    valEl.textContent = t.key === 'temperature' ? v.toFixed(1) : Math.round(v);
+
+    const level = levelOf(v, t.thresholds, t.inv);
+    tile.className    = 'tile level-' + level;
+    stEl.className    = 'tile-status ' + level;
+    stEl.textContent  = t.thresholds.length ? LEVEL_TEXT[level] : '';
+
+    hist[t.key].push(v);
+    if (hist[t.key].length > HIST_LEN) hist[t.key].shift();
+    line.setAttribute('points', sparkPoints(hist[t.key]));
+    line.style.stroke = LEVEL_COLOR[level];
+  });
+
+  const w  = calcWellness(s);
+  const fill = document.getElementById('wi-fill');
+  const wval = document.getElementById('wi-val');
+  const wbadge = document.getElementById('wi-badge');
+  const col  = LEVEL_COLOR[w.level];
+  fill.style.width      = w.index + '%';
+  fill.style.background = col;
+  wval.textContent      = w.index;
+  wval.style.color      = col;
+  wbadge.textContent    = w.level === 'ok' ? 'Хорошо' : w.level === 'warn' ? 'Средне' : 'Плохо';
+  wbadge.style.background = w.level === 'ok' ? 'rgba(32,201,122,0.15)' : w.level === 'warn' ? 'rgba(245,166,35,0.15)' : 'rgba(240,64,64,0.15)';
+  wbadge.style.color      = col;
+
+  document.getElementById('last-update').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+}
+
+let failCount = 0;
+
+async function poll() {
+  try {
+    const r = await fetch(SERVER + '/api/sensors', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    failCount = 0;
+    document.getElementById('status-dot').className  = 'dot online';
+    document.getElementById('status-text').textContent = 'Подключено к ' + SERVER;
+    updateUI(data);
+  } catch(e) {
+    failCount++;
+    document.getElementById('status-dot').className  = 'dot offline';
+    document.getElementById('status-text').textContent = 'Нет связи с сервером (' + failCount + ')';
+  }
+}
+
+document.getElementById('esp-ip').textContent = window.location.hostname || 'localhost';
+buildTiles();
+poll();
+setInterval(poll, POLL_MS);
+</script>
+</body>
+</html>

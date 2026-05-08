@@ -784,3 +784,211 @@ ul, ol { padding-left: 20px; }
   color: var(--red); font-size: 13px; cursor: pointer; transition: all 0.15s;
 }
 .settings-btn-danger:hover { background: rgba(240,64,64,0.2); }
+
+/* ══════════════════════════════════════════
+   НАСТРОЙКИ — ИНТЕГРАЦИИ
+══════════════════════════════════════════ */
+.integration-steps { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.int-step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--text2); }
+.int-num {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  background: var(--blue-d); border: 1px solid var(--blue);
+  color: var(--blue); font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.int-step code { font-family: var(--mono); font-size: 12px; background: var(--bg4); padding: 1px 5px; border-radius: 3px; color: var(--text); }
+.code-block {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
+  line-height: 1.7; margin: 10px 0; word-break: break-all;
+}
+.int-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--text3); }
+.int-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.int-dot.ok  { background: var(--green); }
+.int-dot.err { background: var(--red); }
+
+/* ══════════════════════════════════════════
+   WELLNESS STRIP (компактный)
+══════════════════════════════════════════ */
+.wellness-strip {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--r); padding: 12px 16px;
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 14px; flex-wrap: wrap;
+  transition: border-left-color 0.4s;
+}
+.wellness-strip[data-level="warn"] { border-left-color: #f5a623; }
+.wellness-strip[data-level="bad"]  { border-left-color: var(--red); }
+
+/* Цифра слева */
+.ws-score-wrap {
+  display: flex; align-items: baseline; gap: 3px; flex-shrink: 0;
+}
+.ws-score {
+  font-family: var(--mono); font-size: 32px; font-weight: 700;
+  line-height: 1; transition: color 0.4s;
+}
+.ws-max { font-size: 12px; color: var(--text3); }
+
+/* Центр: badge + прогресс-бар */
+.ws-center { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; }
+.ws-label-row { display: flex; align-items: center; gap: 8px; }
+.ws-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 9px;
+  border-radius: 20px; letter-spacing: 0.04em;
+}
+.ws-badge[data-level="ok"]   { background: rgba(32,201,122,0.15); color: var(--green); }
+.ws-badge[data-level="warn"] { background: rgba(245,166,35,0.15);  color: #f5a623; }
+.ws-badge[data-level="bad"]  { background: rgba(240,64,64,0.15);   color: var(--red); }
+.ws-badge:not([data-level])  { background: var(--bg4); color: var(--text3); }
+.ws-title { font-size: 11px; color: var(--text3); font-weight: 500; }
+.ws-bar-track { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.ws-bar-fill  { height: 100%; border-radius: 3px; width: 0%; transition: width 0.6s ease, background 0.4s; }
+
+/* Компоненты справа */
+.ws-components { display: flex; gap: 10px; flex-wrap: wrap; }
+.ws-comp {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text2); cursor: default;
+}
+.ws-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--text3); transition: background 0.4s;
+}
+.ws-comp-lbl { color: var(--text3); }
+.ws-comp-val { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 22px; }
+
+/* ══════════════════════════════════════════
+   WCI TILE & WORKTIME TILE
+══════════════════════════════════════════ */
+.wci-tile.ok   { border-color: rgba(32,201,122,0.3); }
+.wci-tile.warn { border-color: rgba(245,166,35,0.3); }
+.wci-tile.bad  { border-color: rgba(240,64,64,0.3); }
+
+.wci-tile #d-wci    { font-size: 22px; font-family: var(--mono); font-weight: 700; }
+.worktime-tile #d-worktime { font-size: 18px; font-family: var(--mono); font-weight: 700; }
+
+/* ══════════════════════════════════════════
+   РЕКОМЕНДАЦИИ
+══════════════════════════════════════════ */
+.recommendations-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 20px; margin-bottom: 16px;
+}
+.recommendations-card h4 { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
+.recommendations-panel { display: flex; flex-direction: column; gap: 8px; }
+.rec-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; border-radius: var(--r-sm);
+  border-left: 3px solid transparent; font-size: 13px;
+  background: var(--bg3);
+}
+.rec-item .rec-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.rec-item .rec-text { color: var(--text); line-height: 1.5; }
+.rec-ok      { border-left-color: var(--green); }
+.rec-ok .rec-icon { filter: hue-rotate(0deg); }
+.rec-warning { border-left-color: var(--amber); }
+.rec-danger  { border-left-color: var(--red); }
+.rec-info    { border-left-color: var(--blue); }
+
+.rec-empty { color: var(--text3); font-size: 13px; padding: 8px 0; text-align: center; }
+
+/* ══════════════════════════════════════════
+   ПОМОДОРО — ПРОДУКТИВНОСТЬ
+══════════════════════════════════════════ */
+.pomo-week-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px; margin-top: 16px;
+}
+.pomo-week-card h4 { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 14px; }
+.pomo-week-chart-wrap { position: relative; height: 180px; }
+
+.productivity-score-wrap {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 20px; margin-top: 16px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.productivity-score-wrap h4 { font-size: 13px; font-weight: 600; color: var(--text2); flex-basis: 100%; }
+.productivity-score-val {
+  font-family: var(--mono); font-size: 36px; font-weight: 700; color: var(--green);
+  line-height: 1;
+}
+.productivity-score-label { font-size: 12px; color: var(--text3); }
+.productivity-score-breakdown { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* Лучшее время */
+.best-hours-wrap { padding: 8px 0; }
+.best-hours-time {
+  font-family: var(--mono); font-size: 22px; font-weight: 700;
+  color: var(--blue); margin-bottom: 4px;
+}
+.best-hours-sub  { font-size: 12px; color: var(--green); font-weight: 600; margin-bottom: 4px; }
+.best-hours-hint { font-size: 11px; color: var(--text3); }
+
+/* Focus indicator — pomo active tile pulse */
+.tile.pomo-active { border-color: var(--blue) !important; }
+.tile.pomo-active .tile-icon { animation: pomo-pulse 1.8s ease-in-out infinite; }
+@keyframes pomo-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ══════════════════════════════════════════
+   АНАЛИТИКА — СРАВНЕНИЕ СЕГОДНЯ/ВЧЕРА
+══════════════════════════════════════════ */
+.comparison-chart-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px; margin-bottom: 16px;
+}
+.comparison-chart-card h4 { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 14px; }
+.comparison-chart-wrap { position: relative; height: 220px; }
+/* ══════════════════════════════════════════
+   КАРТОЧКА ПЕЧАТИ ОТЧЁТА
+══════════════════════════════════════════ */
+.print-report-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px; margin-top: 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.print-report-info { display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 200px; }
+.print-report-icon { font-size: 28px; flex-shrink: 0; line-height: 1.1; }
+.print-report-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.print-report-desc  { font-size: 12px; color: var(--text3); line-height: 1.6; }
+.print-report-btn {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 10px 22px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(77,158,255,0.5); background: var(--blue-d);
+  color: var(--blue); font-size: 14px; font-weight: 600; transition: all 0.18s;
+}
+.print-report-btn:hover  { background: rgba(77,158,255,0.22); border-color: var(--blue); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(77,158,255,0.2); }
+.print-report-btn:active { transform: translateY(0); box-shadow: none; }
+.print-report-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.print-report-btn-icon { font-size: 16px; }
+
+/* ══════════════════════════════════════════
+   PRINT / PDF — @media print
+══════════════════════════════════════════ */
+@media print {
+  .sidebar, .mode-switcher, .analytics-toolbar,
+  .print-report-card, .recommendations-card,
+  .settings-btn-export, .settings-btn-danger,
+  .page-header p, #page-settings, #page-about,
+  .ctab, .apb { display: none !important; }
+
+  body { background: #fff !important; color: #111 !important; font-size: 11pt; }
+  .main-content { margin-left: 0 !important; padding: 12pt 16pt !important; }
+
+  .analytics-chart-card, .analytics-stats-section,
+  .comparison-chart-card { border: 1px solid #ddd !important; background: #fff !important; break-inside: avoid; margin-bottom: 12pt; }
+
+  .card-title { color: #333 !important; }
+  canvas { max-width: 100% !important; }
+
+  /* заголовок страницы */
+  #page-analytics .page-header h1::after {
+    content: ' — NEXIS Wellness Station';
+    font-size: 10pt; color: #888;
+  }
+}

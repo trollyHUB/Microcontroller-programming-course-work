@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NEXIS Wellness Station</title>
+  <meta name="theme-color" content="#4d9eff">
+  <meta name="description" content="IoT-станция мониторинга здоровья и продуктивности на рабочем месте">
+  <link rel="manifest" href="/static/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -211,6 +214,58 @@
         <div class="tile-status" id="ds-pressure">--</div>
         <div class="tile-bar"><div class="tile-bar-fill" id="db-pressure"></div></div>
       </div>
+      <!-- Новая плитка: Work Conditions Index -->
+      <div class="tile wci-tile ok" id="tile-wci">
+        <div class="tile-top">
+          <span class="tile-icon">&#127975;</span>
+          <span class="tile-label">Условия работы</span>
+        </div>
+        <div class="tile-value"><span id="d-wci">--</span></div>
+        <div class="tile-status" id="ds-wci">--</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-wci"></div></div>
+      </div>
+      <!-- Новая плитка: Рабочее время за столом -->
+      <div class="tile worktime-tile" id="tile-worktime">
+        <div class="tile-top">
+          <span class="tile-icon">&#9201;</span>
+          <span class="tile-label">За столом</span>
+        </div>
+        <div class="tile-value-text" id="d-worktime">--</div>
+        <div class="tile-status" id="ds-worktime">Сегодня</div>
+        <div class="tile-bar"><div class="tile-bar-fill" id="db-worktime"></div></div>
+      </div>
+    </div>
+
+    <!-- Wellness Strip (компактный) -->
+    <div class="wellness-strip">
+      <div class="ws-score-wrap">
+        <span class="ws-score" id="wellness-index">--</span>
+        <span class="ws-max">/100</span>
+      </div>
+      <div class="ws-center">
+        <div class="ws-label-row">
+          <span class="ws-badge" id="wellness-label">—</span>
+          <span class="ws-title">Wellness Index</span>
+        </div>
+        <div class="ws-bar-track">
+          <div class="ws-bar-fill" id="wellness-bar"></div>
+        </div>
+      </div>
+      <div class="ws-components">
+        <div class="ws-comp" title="CO₂ / Воздух"><span class="ws-dot" id="wc-bar-air"></span><span class="ws-comp-lbl">CO₂</span><span class="ws-comp-val" id="wc-val-air">--</span></div>
+        <div class="ws-comp" title="Температура"><span class="ws-dot" id="wc-bar-temperature"></span><span class="ws-comp-lbl">Темп</span><span class="ws-comp-val" id="wc-val-temperature">--</span></div>
+        <div class="ws-comp" title="Влажность"><span class="ws-dot" id="wc-bar-humidity"></span><span class="ws-comp-lbl">Влаж</span><span class="ws-comp-val" id="wc-val-humidity">--</span></div>
+        <div class="ws-comp" title="Освещённость"><span class="ws-dot" id="wc-bar-light"></span><span class="ws-comp-lbl">Свет</span><span class="ws-comp-val" id="wc-val-light">--</span></div>
+        <div class="ws-comp" title="Шум"><span class="ws-dot" id="wc-bar-noise"></span><span class="ws-comp-lbl">Шум</span><span class="ws-comp-val" id="wc-val-noise">--</span></div>
+      </div>
+    </div>
+
+    <!-- Умные рекомендации -->
+    <div class="recommendations-card">
+      <div class="card-title">&#128161; Рекомендации</div>
+      <div class="recommendations-panel" id="recommendations-panel">
+        <div class="rec-item rec-ok"><span class="rec-icon">✅</span><span class="rec-text">Загрузка данных...</span></div>
+      </div>
     </div>
 
     <!-- График + Pomodoro мини -->
@@ -280,13 +335,51 @@
     </div>
 
     <div class="analytics-chart-card">
-      <div class="card-title">Температура и CO₂</div>
+      <div class="card-header">
+        <span class="card-title" id="analyticsChartTitle">Температура</span>
+        <div class="chart-tabs" id="analyticsMetricTabs">
+          <button class="ctab active" data-am="temperature">Температура</button>
+          <button class="ctab" data-am="humidity">Влажность</button>
+          <button class="ctab" data-am="co2">CO₂</button>
+          <button class="ctab" data-am="light">Свет</button>
+          <button class="ctab" data-am="noise">Шум</button>
+        </div>
+      </div>
       <div class="analytics-chart-wrap"><canvas id="analyticsChart"></canvas></div>
     </div>
 
     <div class="analytics-stats-section">
       <div class="card-title" style="margin-bottom:14px">Сводная статистика</div>
       <div class="analytics-stats-grid" id="analyticsStatsGrid"></div>
+    </div>
+
+    <!-- Сегодня vs Вчера -->
+    <div class="analytics-chart-card" style="margin-top:20px">
+      <div class="card-header">
+        <span class="card-title">&#128197; Сегодня vs Вчера</span>
+        <div class="chart-tabs">
+          <button class="ctab active" onclick="loadAnalyticsComparison('temperature'); this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Температура</button>
+          <button class="ctab" onclick="loadAnalyticsComparison('co2');         this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">CO₂</button>
+          <button class="ctab" onclick="loadAnalyticsComparison('light');       this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Свет</button>
+          <button class="ctab" onclick="loadAnalyticsComparison('noise');       this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Шум</button>
+        </div>
+      </div>
+      <div class="analytics-chart-wrap"><canvas id="comparisonChart"></canvas></div>
+    </div>
+
+    <!-- Печать / Экспорт отчёта -->
+    <div class="print-report-card">
+      <div class="print-report-info">
+        <div class="print-report-icon">&#128438;</div>
+        <div>
+          <div class="print-report-title">Отчёт по аналитике</div>
+          <div class="print-report-desc">Сохранить страницу как PDF или распечатать. Боковая панель и кнопки будут скрыты, останутся только данные и графики.</div>
+        </div>
+      </div>
+      <button class="print-report-btn" id="printReportBtn" onclick="printReport()">
+        <span class="print-report-btn-icon">&#128438;</span>
+        <span>Печать / PDF</span>
+      </button>
     </div>
   </div>
 
@@ -363,6 +456,29 @@
           <div class="card-title">&#9881; История сегодня</div>
           <div class="pomo-history" id="pomoHistory"><div class="no-alerts">Пока нет циклов</div></div>
         </div>
+        <!-- Лучшее время для работы -->
+        <div class="pomo-info-card">
+          <div class="card-title">&#9200; Лучшее время сегодня</div>
+          <div class="best-hours-wrap">
+            <div class="best-hours-time" id="best-hours-text">Накапливаются данные...</div>
+            <div class="best-hours-sub" id="best-hours-co2"></div>
+            <div class="best-hours-hint">Минимальный CO₂ → максимальная концентрация</div>
+          </div>
+        </div>
+        <!-- Продуктивность дня -->
+        <div class="pomo-info-card">
+          <div class="card-title">&#127919; Продуктивность дня</div>
+          <div class="productivity-score-wrap">
+            <div class="productivity-score-val" id="productivity-score">--</div>
+            <div class="productivity-score-max">/100</div>
+          </div>
+          <div class="productivity-score-label" id="productivity-score-label">Вычисляется...</div>
+        </div>
+        <!-- Новое: Недельный график Pomodoro -->
+        <div class="pomo-info-card pomo-week-card">
+          <div class="card-title">&#128197; Pomodoro за неделю</div>
+          <div class="pomo-week-chart-wrap"><canvas id="weeklyPomodoroChart"></canvas></div>
+        </div>
       </div>
     </div>
   </div>
@@ -436,10 +552,14 @@
           <div class="af-item"><span>&#128266;</span> Мониторинг уровня шума</div>
           <div class="af-item"><span>&#128100;</span> Детекция присутствия (PIR датчик)</div>
           <div class="af-item"><span>&#127813;</span> Таймер продуктивности Pomodoro</div>
-          <div class="af-item"><span>&#128202;</span> Аналитика и история за 30 дней</div>
+          <div class="af-item"><span>&#128202;</span> Аналитика по всем 5 метрикам + сравнение дней</div>
           <div class="af-item"><span>&#128203;</span> Журнал всех событий системы</div>
-          <div class="af-item"><span>&#128276;</span> Умные алерты по пороговым значениям</div>
-          <div class="af-item"><span>&#128241;</span> Telegram Bot для управления</div>
+          <div class="af-item"><span>&#128276;</span> Умные алерты + Telegram Bot уведомления</div>
+          <div class="af-item"><span>&#129351;</span> Wellness Index — оценка условий 0–100</div>
+          <div class="af-item"><span>&#127919;</span> Счёт продуктивности дня</div>
+          <div class="af-item"><span>&#128279;</span> Home Assistant REST API интеграция</div>
+          <div class="af-item"><span>&#128241;</span> PWA — установка как приложение</div>
+          <div class="af-item"><span>&#128438;</span> Экспорт CSV и печать PDF-отчёта</div>
         </div>
       </div>
       <div class="about-arch">
@@ -736,6 +856,47 @@
         <div class="card-title">&#128276; Браузерные уведомления</div>
         <p class="settings-hint">Уведомления показываются когда Pomodoro таймер завершается — даже если вкладка свёрнута.</p>
         <button class="settings-btn-save" onclick="if('Notification' in window) Notification.requestPermission().then(p => toast.show('Разрешение: ' + p, 'info', 3000))">Разрешить уведомления</button>
+      </div>
+
+      <!-- Telegram Bot -->
+      <div class="settings-card">
+        <div class="card-title">&#128241; Telegram Bot — Алерты</div>
+        <p class="settings-hint">Бот автоматически отправляет сообщение при опасных показаниях датчиков и присылает ежедневную сводку в 18:00.</p>
+        <div class="integration-steps">
+          <div class="int-step"><span class="int-num">1</span><span>Создайте бота через <b>@BotFather</b> в Telegram → получите токен</span></div>
+          <div class="int-step"><span class="int-num">2</span><span>Узнайте ваш Chat ID через <b>@userinfobot</b></span></div>
+          <div class="int-step"><span class="int-num">3</span><span>Запустите сервер с переменными окружения:</span></div>
+        </div>
+        <div class="code-block">set NEXIS_TELEGRAM_TOKEN=1234567890:ABC...<br>set NEXIS_TELEGRAM_CHAT_ID=123456789<br>python -m uvicorn main:socket_app --port 5000</div>
+        <div class="int-status" id="telegram-status">
+          <span class="int-dot"></span><span id="telegram-status-text">Проверяем...</span>
+        </div>
+      </div>
+
+      <!-- Home Assistant -->
+      <div class="settings-card">
+        <div class="card-title">&#127968; Home Assistant — Интеграция</div>
+        <p class="settings-hint">NEXIS предоставляет endpoint в формате HA REST sensor. Все 7 показателей доступны как сенсоры в Home Assistant для автоматизаций умного дома.</p>
+        <div class="integration-steps">
+          <div class="int-step"><span class="int-num">1</span><span>Откройте <code>/api/ha-sensor</code> — проверьте формат данных</span></div>
+          <div class="int-step"><span class="int-num">2</span><span>В Home Assistant откройте <code>configuration.yaml</code></span></div>
+          <div class="int-step"><span class="int-num">3</span><span>Добавьте блок и укажите IP вашего компьютера вместо <code>SERVER_IP</code></span></div>
+        </div>
+        <div class="code-block">sensor:<br>&nbsp;&nbsp;- platform: rest<br>&nbsp;&nbsp;&nbsp;&nbsp;resource: http://SERVER_IP:5000/api/ha-sensor<br>&nbsp;&nbsp;&nbsp;&nbsp;name: "NEXIS CO2"<br>&nbsp;&nbsp;&nbsp;&nbsp;value_template: "{{ value_json.co2 }}"<br>&nbsp;&nbsp;&nbsp;&nbsp;unit_of_measurement: "ppm"<br>&nbsp;&nbsp;&nbsp;&nbsp;scan_interval: 30</div>
+        <a class="settings-btn-export" href="/api/ha-sensor" target="_blank">&#128279; Открыть /api/ha-sensor</a>
+      </div>
+
+      <!-- PWA установка -->
+      <div class="settings-card">
+        <div class="card-title">&#128241; Установить как приложение (PWA)</div>
+        <p class="settings-hint">NEXIS можно установить как обычное приложение на телефон или компьютер — без App Store.</p>
+        <div class="integration-steps">
+          <div class="int-step"><span class="int-num">1</span><span>Откройте дашборд в <b>Google Chrome</b> или Edge</span></div>
+          <div class="int-step"><span class="int-num">2</span><span>В адресной строке справа нажмите иконку <b>«Установить»</b> (⊕)</span></div>
+          <div class="int-step"><span class="int-num">3</span><span>На Android: Меню → «Добавить на главный экран»</span></div>
+        </div>
+        <button class="settings-btn-save" id="pwaInstallBtn" style="display:none" onclick="window._pwaPrompt && window._pwaPrompt.prompt()">&#128241; Установить приложение</button>
+        <p class="settings-hint" id="pwaStatus">Обнаружение PWA...</p>
       </div>
 
       <!-- Очистка истории -->

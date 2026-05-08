@@ -377,6 +377,8 @@ function navigateTo(page) {
 
   // Обновить topbar title
   if (page === 'analytics') loadAnalytics();
+  if (page === 'pomodoro')  { loadWeeklyStats(); loadAnalyticsComparison(_analyticsMetric); }
+  if (page === 'settings')  checkTelegramStatus();
 
   const titles = {
     'dashboard': 'Dashboard', 'pomodoro': 'Pomodoro', 'logs': 'Журнал событий',
@@ -458,15 +460,18 @@ window.setDemoInterval = setDemoInterval;
 
 function demoData() {
   const t = state.demoTick++;
+  // Счётчик рабочего времени растёт реалистично: ~10 сек за тик
+  const demoWorkBase = 3600 + t * 10;
   return {
-    temperature: 22 + Math.sin(t * 0.08) * 2.5 + Math.random() * 0.4,
-    humidity:    50 + Math.sin(t * 0.05) * 8   + Math.random() * 1.5,
-    co2:         680 + Math.sin(t * 0.04) * 200 + Math.random() * 30,
-    light:       380 + Math.sin(t * 0.06) * 120 + Math.random() * 40,
-    noise:       38  + Math.random() * 14,
-    motion:      t % 22 < 16 ? 1 : 0,
-    pressure:    1013 + Math.sin(t * 0.02) * 8 + Math.random() * 2,
-    timestamp:   new Date().toISOString(),
+    temperature:     22 + Math.sin(t * 0.08) * 2.5 + Math.random() * 0.4,
+    humidity:        50 + Math.sin(t * 0.05) * 8   + Math.random() * 1.5,
+    co2:             680 + Math.sin(t * 0.04) * 200 + Math.random() * 30,
+    light:           380 + Math.sin(t * 0.06) * 120 + Math.random() * 40,
+    noise:           38  + Math.random() * 14,
+    motion:          t % 22 < 16 ? 1 : 0,
+    pressure:        1013 + Math.sin(t * 0.02) * 8 + Math.random() * 2,
+    work_time_today: demoWorkBase,
+    timestamp:       new Date().toISOString(),
   };
 }
 
@@ -645,7 +650,338 @@ function applyData(data) {
 
   // Добавить точку на график
   addChartPoint(data);
+
+  // Wellness Index
+  updateWellnessCard(data);
+
+  // Work Conditions Index
+  updateWCITile(data);
+
+  // Рабочее время
+  updateWorkTimeTile(data);
+
+  // Умные рекомендации
+  updateRecommendationsPanel(data);
+
+  // Focus indicator на Pomodoro плитке дашборда
+  const focusTile = document.getElementById('tile-focus');
+  if (focusTile && typeof pomodoro !== 'undefined') {
+    const miniTimer = document.getElementById('miniPomoTimer');
+    if (pomodoro.isRunning && !pomodoro.isBreak) {
+      focusTile.classList.add('pomo-active');
+    } else {
+      focusTile.classList.remove('pomo-active');
+    }
+  }
 }
+
+// ──────────────────────────────────────────────────
+// WELLNESS INDEX
+// ──────────────────────────────────────────────────
+function calcWellnessIndex(s) {
+  const co2   = s.co2   ?? 400;
+  const temp  = s.temperature ?? 22;
+  const hum   = s.humidity   ?? 50;
+  const light = s.light      ?? 400;
+  const noise = s.noise      ?? 40;
+
+  const sCo2   = co2 < 600  ? 100 : co2 < 800  ? 80 : co2 < 1000 ? 50 : 20;
+  const sTemp  = temp >= 20 && temp <= 25 ? 100 : temp >= 18 && temp <= 27 ? 70 : 30;
+  const sHum   = hum  >= 40 && hum  <= 60 ? 100 : hum  >= 30 && hum  <= 70 ? 70 : 30;
+  const sLight = light >= 300 && light <= 700 ? 100 : light >= 150 ? 70 : 30;
+  const sNoise = noise < 40 ? 100 : noise < 55 ? 80 : noise < 70 ? 50 : 20;
+  return {
+    index: Math.round((sCo2 + sTemp + sHum + sLight + sNoise) / 5),
+    components: { air: sCo2, temperature: sTemp, humidity: sHum, light: sLight, noise: sNoise },
+  };
+}
+
+function updateWellnessCard(s) {
+  const { index, components } = calcWellnessIndex(s);
+  const level = index > 80 ? 'ok' : index > 50 ? 'warn' : 'bad';
+  const color = level === 'ok' ? 'var(--green)' : level === 'warn' ? '#f5a623' : 'var(--red)';
+
+  const strip = document.querySelector('.wellness-strip');
+  if (strip) strip.dataset.level = level;
+
+  const el = document.getElementById('wellness-index');
+  if (el) { el.textContent = index; el.style.color = color; el.classList.add('pop'); setTimeout(() => el.classList.remove('pop'), 300); }
+
+  const bar = document.getElementById('wellness-bar');
+  if (bar) { bar.style.width = index + '%'; bar.style.background = color; }
+
+  const lbl = document.getElementById('wellness-label');
+  if (lbl) {
+    lbl.textContent = index > 80 ? 'Отлично' : index > 60 ? 'Хорошо' : index > 40 ? 'Средне' : 'Плохо';
+    lbl.dataset.level = level;
+  }
+
+  Object.entries(components).forEach(([key, score]) => {
+    const dot = document.getElementById(`wc-bar-${key}`);
+    if (dot) dot.style.background = score > 70 ? 'var(--green)' : score > 40 ? '#f5a623' : 'var(--red)';
+    const val = document.getElementById(`wc-val-${key}`);
+    if (val) val.textContent = score;
+  });
+}
+
+// ──────────────────────────────────────────────────
+// WORK CONDITIONS INDEX (WCI)
+// ──────────────────────────────────────────────────
+function calcWCI(s) {
+  const co2   = s.co2   ?? 400;
+  const light = s.light ?? 400;
+  const noise = s.noise ?? 40;
+  const sCo2   = co2 < 600  ? 100 : co2 < 800  ? 80 : co2 < 1000 ? 50 : 20;
+  const sLight = light >= 200 && light <= 800 ? 100 : light >= 100 ? 70 : 30;
+  const sNoise = noise < 40 ? 100 : noise < 55 ? 80 : noise < 70 ? 50 : 20;
+  return Math.round((sCo2 * 2 + sLight + sNoise * 1.5) / 4.5);
+}
+
+function updateWCITile(s) {
+  const wci = calcWCI(s);
+  const el  = document.getElementById('d-wci');
+  if (el) el.textContent = wci + '%';
+  const st = document.getElementById('ds-wci');
+  if (st) st.textContent = wci > 80 ? '🟢 Отличные' : wci > 50 ? '🟡 Средние' : '🔴 Плохие';
+  const tile = document.getElementById('tile-wci');
+  if (tile) tile.className = `tile wci-tile ${wci > 80 ? 'ok' : wci > 50 ? 'warn' : 'danger'}`;
+  const bar = document.getElementById('db-wci');
+  if (bar) bar.style.width = wci + '%';
+}
+
+// ──────────────────────────────────────────────────
+// УМНЫЕ РЕКОМЕНДАЦИИ
+// ──────────────────────────────────────────────────
+function getSmartRecommendations(s) {
+  const tips = [];
+  const co2  = s.co2   ?? 0;
+  const temp = s.temperature ?? 22;
+  const hum  = s.humidity   ?? 50;
+  const lux  = s.light      ?? 400;
+  const db   = s.noise      ?? 40;
+
+  if (co2 > 1200) tips.push({ level: 'danger',  icon: '🚨', text: `CO₂ критически высокий (${Math.round(co2)} ppm)! Срочно проветрите!` });
+  else if (co2 > 1000) tips.push({ level: 'warning', icon: '🪟', text: `CO₂ повышен (${Math.round(co2)} ppm) — откройте окно` });
+  else if (co2 > 800)  tips.push({ level: 'info',    icon: '💨', text: `CO₂ немного повышен (${Math.round(co2)} ppm) — проветрите скоро` });
+
+  if (lux < 50)       tips.push({ level: 'warning', icon: '💡', text: `Очень темно (${Math.round(lux)} lux) — включите освещение` });
+  else if (lux < 150) tips.push({ level: 'info',    icon: '🔆', text: `Освещённость низкая (${Math.round(lux)} lux) — добавьте свет` });
+
+  if (db > 70)      tips.push({ level: 'warning', icon: '🔇', text: `Очень шумно (${Math.round(db)} dB) — наденьте наушники` });
+  else if (db > 55) tips.push({ level: 'info',    icon: '🎧', text: `Шумно (${Math.round(db)} dB) — наушники помогут сосредоточиться` });
+
+  if (temp > 27)      tips.push({ level: 'warning', icon: '🌡', text: `Жарко (${temp.toFixed(1)}°C) — включите вентиляцию` });
+  else if (temp < 18) tips.push({ level: 'warning', icon: '🧥', text: `Холодно (${temp.toFixed(1)}°C) — оденьтесь теплее` });
+
+  if (hum < 30)      tips.push({ level: 'info', icon: '💧', text: `Воздух сухой (${Math.round(hum)}%) — используйте увлажнитель` });
+  else if (hum > 70) tips.push({ level: 'info', icon: '🚿', text: `Высокая влажность (${Math.round(hum)}%) — улучшите вентиляцию` });
+
+  if (!tips.length) tips.push({ level: 'ok', icon: '✅', text: 'Условия на рабочем месте отличные!' });
+  return tips.slice(0, 3);
+}
+
+function updateRecommendationsPanel(s) {
+  const panel = document.getElementById('recommendations-panel');
+  if (!panel) return;
+  const tips = getSmartRecommendations(s);
+  panel.textContent = '';
+  tips.forEach(tip => {
+    const item = document.createElement('div');
+    item.className = `rec-item rec-${tip.level}`;
+    const icon = document.createElement('span');
+    icon.className = 'rec-icon';
+    icon.textContent = tip.icon;
+    const text = document.createElement('span');
+    text.className = 'rec-text';
+    text.textContent = tip.text;
+    item.appendChild(icon);
+    item.appendChild(text);
+    panel.appendChild(item);
+  });
+}
+
+// ──────────────────────────────────────────────────
+// РАБОЧЕЕ ВРЕМЯ (PIR)
+// ──────────────────────────────────────────────────
+function formatWorkTime(secs) {
+  if (!secs || secs <= 0) return '—';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  return h > 0 ? `${h}ч ${m}м` : `${m}м`;
+}
+
+function updateWorkTimeTile(s) {
+  const secs = s.work_time_today;
+  const el   = document.getElementById('d-worktime');
+  if (el) el.textContent = formatWorkTime(secs);
+  const pct  = Math.min(100, ((secs || 0) / (8 * 3600)) * 100);
+  const bar  = document.getElementById('db-worktime');
+  if (bar) bar.style.width = pct + '%';
+  const st = document.getElementById('ds-worktime');
+  if (st) {
+    const h = Math.floor((secs || 0) / 3600);
+    st.textContent = h >= 8 ? 'Полный день' : h >= 4 ? 'Половина дня' : 'Начало дня';
+  }
+}
+
+// ──────────────────────────────────────────────────
+// НЕДЕЛЬНАЯ СТАТИСТИКА POMODORO
+// ──────────────────────────────────────────────────
+let weeklyChart = null;
+
+function loadWeeklyStats() {
+  fetch('/api/stats/week')
+    .then(r => r.json())
+    .then(rows => {
+      if (!Array.isArray(rows) || !rows.length) return;
+      renderWeeklyChart(rows);
+      renderProductivityScore(rows);
+    })
+    .catch(() => {});
+}
+
+function renderWeeklyChart(rows) {
+  const ctx = document.getElementById('weeklyPomodoroChart');
+  if (!ctx) return;
+  if (weeklyChart) { weeklyChart.destroy(); weeklyChart = null; }
+  const c = getChartThemeColors();
+  const labels = rows.map(r => {
+    const d = new Date(r.day);
+    return d.toLocaleDateString('ru', { weekday: 'short', day: 'numeric' });
+  });
+  weeklyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Помодоро',
+        data: rows.map(r => r.pomodoros || 0),
+        backgroundColor: '#4d9eff88',
+        borderColor: '#4d9eff',
+        borderWidth: 2,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: c.ttBg, titleColor: c.ttTitle, bodyColor: c.ttBody } },
+      scales: {
+        x: { grid: { color: c.grid }, ticks: { color: c.ticks } },
+        y: { grid: { color: c.grid }, ticks: { color: c.ticks, stepSize: 1 }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+function renderProductivityScore(weekRows) {
+  const el = document.getElementById('productivity-score');
+  if (!el) return;
+  const today = weekRows[weekRows.length - 1] || {};
+  const pomoScore = Math.min(100, (today.pomodoros || 0) * 10);
+  const { index: wIndex } = calcWellnessIndex(state.sensors);
+  const workSecs = state.sensors.work_time_today || 0;
+  const workScore = Math.min(100, (workSecs / (8 * 3600)) * 100);
+  const score = Math.round(pomoScore * 0.4 + wIndex * 0.4 + workScore * 0.2);
+  el.textContent = score;
+  const lbl = document.getElementById('productivity-score-label');
+  if (lbl) lbl.textContent = score > 80 ? 'Отличный день!' : score > 60 ? 'Хороший день' : score > 40 ? 'Средний день' : 'Слабый день';
+
+  // Обновляем "лучшее время" на основе данных из буфера
+  renderBestHours();
+}
+
+function renderBestHours() {
+  const el = document.getElementById('best-hours-text');
+  if (!el) return;
+
+  const rows = state.chartData.map(pt => pt.full).filter(r => r.co2 != null);
+  if (rows.length < 6) { el.textContent = 'Накапливаются данные...'; return; }
+
+  // Группируем по часу, берём средний CO₂
+  const byHour = {};
+  rows.forEach(r => {
+    const h = new Date(r.timestamp).getHours();
+    if (!byHour[h]) byHour[h] = [];
+    byHour[h].push(r.co2);
+  });
+
+  // Находим час с минимальным средним CO₂ (лучший воздух = лучший фокус)
+  let bestH = null, bestCo2 = Infinity;
+  Object.entries(byHour).forEach(([h, vals]) => {
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    if (avg < bestCo2) { bestCo2 = avg; bestH = +h; }
+  });
+
+  if (bestH == null) { el.textContent = 'Недостаточно данных'; return; }
+  const endH = (bestH + 2) % 24;
+  el.textContent = `${String(bestH).padStart(2,'0')}:00 — ${String(endH).padStart(2,'0')}:00`;
+
+  const co2El = document.getElementById('best-hours-co2');
+  if (co2El) co2El.textContent = 'CO₂ ≈ ' + Math.round(bestCo2) + ' ppm';
+}
+
+// ──────────────────────────────────────────────────
+// АНАЛИТИКА — СЕГОДНЯ VS ВЧЕРА
+// ──────────────────────────────────────────────────
+function loadAnalyticsComparison(metric) {
+  metric = metric || state.activeMetric || 'temperature';
+
+  // Demo-режим: разбиваем буфер на «вчера» (первая половина) и «сегодня» (вторая)
+  if (state.mode === 'demo' && state.chartData.length >= 4) {
+    const all  = state.chartData.map(pt => pt.full);
+    const half = Math.floor(all.length / 2);
+    // Имитируем метки «вчера»: сдвигаем timestamp на сутки назад
+    const yesterday = all.slice(0, half).map(r => ({
+      ...r,
+      timestamp: new Date(new Date(r.timestamp).getTime() - 86400000).toISOString(),
+    }));
+    renderComparisonChart(all.slice(half), yesterday, metric);
+    return;
+  }
+
+  fetch('/api/history?hours=48')
+    .then(r => r.json())
+    .then(rows => {
+      if (!Array.isArray(rows) || !rows.length) return;
+      const todayStr     = new Date().toDateString();
+      const yesterdayStr = new Date(Date.now() - 86400000).toDateString();
+      renderComparisonChart(
+        rows.filter(r => new Date(r.timestamp).toDateString() === todayStr),
+        rows.filter(r => new Date(r.timestamp).toDateString() === yesterdayStr),
+        metric,
+      );
+    })
+    .catch(() => {});
+}
+
+let comparisonChart = null;
+
+function renderComparisonChart(todayRows, yesterdayRows, metric) {
+  const ctx = document.getElementById('comparisonChart');
+  if (!ctx) return;
+  if (comparisonChart) { comparisonChart.destroy(); comparisonChart = null; }
+  const c = getChartThemeColors();
+  const toTime = r => new Date(r.timestamp).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+  comparisonChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: todayRows.map(toTime),
+      datasets: [
+        { label: 'Сегодня', data: todayRows.map(r => r[metric]), borderColor: '#4d9eff', backgroundColor: '#4d9eff18', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 },
+        { label: 'Вчера',   data: yesterdayRows.map(r => r[metric]), borderColor: '#888', backgroundColor: '#88888818', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.4, borderDash: [4, 4] },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: c.ticks } }, tooltip: { backgroundColor: c.ttBg, titleColor: c.ttTitle, bodyColor: c.ttBody } },
+      scales: {
+        x: { grid: { color: c.grid }, ticks: { color: c.ticks, maxTicksLimit: 10, maxRotation: 0 } },
+        y: { grid: { color: c.grid }, ticks: { color: c.ticks } },
+      },
+    },
+  });
+}
+window.loadAnalyticsComparison = loadAnalyticsComparison;
 
 function clearSensorDisplay() {
   ['temp','hum','co2','light','noise'].forEach(k => {
@@ -731,10 +1067,21 @@ function switchChartMetric(metric) {
 
 document.querySelectorAll('.ctab').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+    // Вкладки аналитики обрабатываются отдельным делегатом ниже
+    if (btn.dataset.am) return;
+    // Вкладки сравнения сегодня/вчера — тоже обрабатываются через onclick в HTML
+    if (btn.closest('#comparisonTabsCard')) return;
+    btn.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     switchChartMetric(btn.dataset.m);
   });
+});
+
+// Вкладки выбора метрики в основном графике аналитики
+document.getElementById('analyticsMetricTabs')?.addEventListener('click', e => {
+  const btn = e.target.closest('.ctab');
+  if (!btn || !btn.dataset.am) return;
+  loadAnalytics(undefined, btn.dataset.am);
 });
 
 // ──────────────────────────────────────────────────
@@ -1174,66 +1521,131 @@ window.clearHistory = clearHistory;
 // АНАЛИТИКА
 // ──────────────────────────────────────────────────
 let analyticsChart = null;
+let _analyticsHours  = 24;
+let _analyticsMetric = 'temperature';
 
-function loadAnalytics(hours) {
-  hours = hours || 24;
+// Метаданные метрик: единица, пороги warn/danger, подпись
+const METRIC_META = {
+  temperature: { label: 'Температура', unit: '°C',  warn: 27,   danger: 30,   color: CFG.metricColor.temperature },
+  humidity:    { label: 'Влажность',   unit: '%',   warn: 65,   danger: 75,   color: CFG.metricColor.humidity    },
+  co2:         { label: 'CO₂',         unit: 'ppm', warn: 800,  danger: 1200, color: CFG.metricColor.co2         },
+  light:       { label: 'Освещённость',unit: 'lux', warn: 150,  danger: 50,   color: CFG.metricColor.light       },
+  noise:       { label: 'Шум',         unit: 'dB',  warn: 55,   danger: 70,   color: CFG.metricColor.noise       },
+};
+
+function loadAnalytics(hours, metric) {
+  if (hours  !== undefined) _analyticsHours  = hours;
+  if (metric !== undefined) _analyticsMetric = metric;
+  hours  = _analyticsHours;
+  metric = _analyticsMetric;
+
+  // Синхронизировать активную вкладку
+  document.querySelectorAll('#analyticsMetricTabs .ctab').forEach(b => {
+    b.classList.toggle('active', b.dataset.am === metric);
+  });
+  const titleEl = document.getElementById('analyticsChartTitle');
+  if (titleEl) titleEl.textContent = (METRIC_META[metric] || {}).label || metric;
+
   const st = document.getElementById('analyticsStatus');
 
   // Демо-режим: используем буфер из памяти браузера
   if (state.mode === 'demo' && state.chartData.length > 0) {
     const rows = state.chartData.map(pt => pt.full);
-    if (st) st.textContent = 'Демо-данные — ' + rows.length + ' точек в памяти';
-    renderAnalyticsChart(rows);
+    if (st) st.textContent = 'Демо — ' + rows.length + ' точек';
+    renderAnalyticsChart(rows, metric);
     renderAnalyticsStats(rows);
     return;
   }
 
-  // Live-режим или пустой демо: читаем из базы данных
-  if (st) st.textContent = 'Загрузка из БД...';
+  // Live-режим: читаем из базы данных
+  if (st) st.textContent = 'Загрузка...';
   fetch('/api/history?hours=' + hours)
     .then(r => r.json())
     .then(rows => {
       if (!Array.isArray(rows) || !rows.length) {
-        if (st) {
-          st.textContent = state.mode === 'demo'
-            ? 'Подождите — демо-данные ещё накапливаются. Обновите через несколько секунд.'
-            : 'Нет данных за выбранный период';
-        }
+        if (st) st.textContent = state.mode === 'demo'
+          ? 'Подождите — демо-данные ещё накапливаются'
+          : 'Нет данных за выбранный период';
         return;
       }
-      if (st) st.textContent = 'Из БД — ' + rows.length + ' точек';
-      renderAnalyticsChart(rows);
+      if (st) st.textContent = 'БД — ' + rows.length + ' точек';
+      renderAnalyticsChart(rows, metric);
       renderAnalyticsStats(rows);
     })
     .catch(() => { if (st) st.textContent = 'Ошибка загрузки'; });
 }
 window.loadAnalytics = loadAnalytics;
 
-function renderAnalyticsChart(rows) {
+function renderAnalyticsChart(rows, metric) {
+  metric = metric || _analyticsMetric || 'temperature';
   const ctx = document.getElementById('analyticsChart');
   if (!ctx) return;
   if (analyticsChart) { analyticsChart.destroy(); analyticsChart = null; }
-  const c = getChartThemeColors();
-  const labels = rows.map(r => new Date(r.timestamp).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }));
+
+  const meta   = METRIC_META[metric] || { label: metric, unit: '', warn: null, danger: null, color: '#4d9eff' };
+  const c      = getChartThemeColors();
+  const labels = rows.map(r => {
+    const d = new Date(r.timestamp);
+    return d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+  });
+  const data   = rows.map(r => r[metric] != null ? +r[metric] : null);
+  const vals   = data.filter(v => v != null);
+  const avg    = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+
+  const datasets = [
+    {
+      label: meta.label + ' (' + meta.unit + ')',
+      data,
+      borderColor: meta.color,
+      backgroundColor: meta.color + '22',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      fill: true,
+      tension: 0.4,
+    },
+  ];
+
+  // Пороговые линии (warn / danger)
+  if (meta.warn != null) datasets.push({
+    label: 'Предупреждение (' + meta.warn + ' ' + meta.unit + ')',
+    data: rows.map(() => meta.warn),
+    borderColor: 'rgba(245,166,35,0.6)', borderWidth: 1.5,
+    borderDash: [6, 4], pointRadius: 0, fill: false, tension: 0,
+  });
+  if (meta.danger != null) datasets.push({
+    label: 'Опасно (' + meta.danger + ' ' + meta.unit + ')',
+    data: rows.map(() => meta.danger),
+    borderColor: 'rgba(240,64,64,0.55)', borderWidth: 1.5,
+    borderDash: [4, 3], pointRadius: 0, fill: false, tension: 0,
+  });
+
   analyticsChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: 'T \xb0C', data: rows.map(r => r.temperature), borderColor: CFG.metricColor.temperature, backgroundColor: CFG.metricColor.temperature + '18', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4, yAxisID: 'y'  },
-        { label: 'CO₂ ppm', data: rows.map(r => r.co2),     borderColor: CFG.metricColor.co2,         backgroundColor: CFG.metricColor.co2 + '18',         borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4, yAxisID: 'y2' },
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: true, labels: { color: c.ticks } }, tooltip: { backgroundColor: c.ttBg, borderColor: c.ttBorder, borderWidth: 1, titleColor: c.ttTitle, bodyColor: c.ttBody, padding: 10 } },
+      plugins: {
+        legend: { display: true, labels: { color: c.ticks, boxHeight: 2 } },
+        tooltip: {
+          backgroundColor: c.ttBg, borderColor: c.ttBorder, borderWidth: 1,
+          titleColor: c.ttTitle, bodyColor: c.ttBody, padding: 10,
+          callbacks: {
+            afterBody: (items) => {
+              const v = items[0]?.raw;
+              if (v == null || avg == null) return '';
+              const diff = v - avg;
+              return 'Среднее: ' + fmt(avg, 1) + ' ' + meta.unit + '   Δ ' + (diff >= 0 ? '+' : '') + fmt(diff, 1);
+            },
+          },
+        },
+      },
       scales: {
-        x:  { grid: { color: c.grid }, ticks: { color: c.ticks, maxTicksLimit: 10, maxRotation: 0 } },
-        y:  { grid: { color: c.grid }, ticks: { color: c.ticks }, position: 'left',  title: { display: true, text: '\xb0C', color: c.ticks } },
-        y2: { grid: { display: false }, ticks: { color: c.ticks }, position: 'right', title: { display: true, text: 'ppm', color: c.ticks } },
-      }
-    }
+        x: { grid: { color: c.grid }, ticks: { color: c.ticks, maxTicksLimit: 12, maxRotation: 0 } },
+        y: { grid: { color: c.grid }, ticks: { color: c.ticks }, title: { display: true, text: meta.unit, color: c.ticks } },
+      },
+    },
   });
 }
 
@@ -1422,6 +1834,69 @@ function doExport() {
 window.doExport = doExport;
 
 // ──────────────────────────────────────────────────
+// PWA INSTALL PROMPT
+// ──────────────────────────────────────────────────
+window._pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  window._pwaPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  const st  = document.getElementById('pwaStatus');
+  if (btn) btn.style.display = 'inline-flex';
+  if (st)  st.textContent = 'Приложение можно установить через кнопку выше.';
+});
+window.addEventListener('appinstalled', () => {
+  const st = document.getElementById('pwaStatus');
+  if (st) st.textContent = '✅ Приложение установлено!';
+  window._pwaPrompt = null;
+});
+// Если уже запущено как PWA
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  setTimeout(() => {
+    const st = document.getElementById('pwaStatus');
+    if (st) st.textContent = '✅ Вы уже используете NEXIS как приложение.';
+  }, 500);
+}
+
+// ──────────────────────────────────────────────────
+// TELEGRAM STATUS PROBE
+// ──────────────────────────────────────────────────
+function checkTelegramStatus() {
+  fetch('/api/status')
+    .then(r => r.json())
+    .then(d => {
+      const dot  = document.querySelector('#telegram-status .int-dot');
+      const text = document.getElementById('telegram-status-text');
+      const ok = d.telegram_configured === true;
+      if (dot)  { dot.className = 'int-dot ' + (ok ? 'ok' : 'err'); }
+      if (text) text.textContent = ok
+        ? '✅ Telegram настроен — алерты активны'
+        : '⚠ Telegram не настроен — задайте NEXIS_TELEGRAM_TOKEN и NEXIS_TELEGRAM_CHAT_ID';
+    })
+    .catch(() => {});
+}
+
+// ──────────────────────────────────────────────────
+// ПЕЧАТЬ ОТЧЁТА
+// ──────────────────────────────────────────────────
+function printReport() {
+  const btn = document.getElementById('printReportBtn');
+  if (btn) {
+    const origText = btn.querySelector('span:last-child').textContent;
+    btn.disabled = true;
+    btn.querySelector('span:last-child').textContent = 'Подготовка...';
+    setTimeout(() => {
+      window.print();
+      btn.disabled = false;
+      btn.querySelector('span:last-child').textContent = origText;
+    }, 250);
+  } else {
+    window.print();
+  }
+}
+window.printReport = printReport;
+
+// ──────────────────────────────────────────────────
 // INIT
 // ──────────────────────────────────────────────────
 function init() {
@@ -1433,11 +1908,24 @@ function init() {
   document.querySelectorAll('.tu-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === tempUnit));
   document.querySelectorAll('.di-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.ms) === demoIntervalMs));
 
+  // Авто-тема по времени суток (только если пользователь не выбирал вручную)
+  // Используем documentElement — тот же механизм что и toggleTheme()
+  if (!localStorage.getItem('nexis-theme')) {
+    const hour = new Date().getHours();
+    document.documentElement.setAttribute('data-theme', (hour >= 8 && hour < 20) ? 'light' : 'dark');
+  }
+
+  // PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+  }
+
   logger.add('system', '🚀 NEXIS Wellness Station v2 запущена');
   logger.add('system', 'Режим: Демо-данные');
 
   loadHistoryIntoChart();
   loadStatsFromDB();
+  loadWeeklyStats();
 
   fetch('/api/sensors')
     .then(r => r.json())

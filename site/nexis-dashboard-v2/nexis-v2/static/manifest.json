@@ -1,0 +1,36 @@
+{
+  "name": "NEXIS Wellness Station",
+  "short_name": "NEXIS",
+  "description": "IoT-станция мониторинга здоровья и продуктивности на рабочем месте",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0e14",
+  "theme_color": "#4d9eff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/?page=dashboard",
+      "description": "Открыть дашборд"
+    },
+    {
+      "name": "Pomodoro",
+      "url": "/?page=pomodoro",
+      "description": "Открыть таймер Pomodoro"
+    }
+  ]
+}
