@@ -45,7 +45,8 @@ function navigateTo(page) {
   state.currentPage = page;
 
   // Обновить topbar title
-  if (page === 'analytics') loadAnalytics();
+  if (page === 'analytics') { loadAnalytics(); setTimeout(initCorrelation, 300); }
+  if (page === 'dashboard') { loadWellnessHistory(); }
   if (page === 'pomodoro')  { loadWeeklyStats(); loadAnalyticsComparison(_analyticsMetric); }
   if (page === 'settings')  { checkTelegramStatus(); if (typeof loadNotifSettings === 'function') loadNotifSettings(); }
   if (page === 'timer' && !_timerPageInited) { initTimerPage(); _timerPageInited = true; }
@@ -161,6 +162,63 @@ function stopDemoLoop() {
 }
 
 // ──────────────────────────────────────────────────
+// D3: SEVERITY SCORE для алертов (1–10)
+// ──────────────────────────────────────────────────
+const _severityLog = []; // { time, level, msg, score, key }
+
+function calcSeverity(key, val, level) {
+  const th = CFG.thresholds[key];
+  if (!th) return level === 'danger' ? 7 : 4;
+  let base = level === 'danger' ? 6 : 3;
+  let excess = 0;
+  if (key === 'co2')   excess = Math.max(0, (val - (level === 'danger' ? th.danger : th.warn)) / th.warn);
+  else if (key === 'noise') excess = Math.max(0, (val - (level === 'danger' ? th.danger : th.warn)) / th.warn);
+  else if (key === 'temperature') excess = Math.max(0, (val - (level === 'danger' ? th.danger : th.warn)) / th.warn);
+  else if (key === 'light') excess = Math.max(0, ((level === 'danger' ? th.lowDanger : th.lowWarn) - val) / (th.lowWarn || 150));
+  return Math.min(10, Math.round(base + excess * 4));
+}
+
+function addSeverityEntry(key, val, level, msg) {
+  const score = calcSeverity(key, val, level);
+  _severityLog.unshift({ time: new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }), level, msg, score, key });
+  if (_severityLog.length > 50) _severityLog.pop();
+  renderSeverityLog();
+  return score;
+}
+
+function renderSeverityLog(minScore) {
+  const container = document.getElementById('severity-log-list');
+  if (!container) return;
+  const filter = minScore || parseInt(document.getElementById('severity-filter')?.value || '1');
+  const filtered = _severityLog.filter(e => e.score >= filter);
+  while (container.firstChild) container.removeChild(container.firstChild);
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'no-alerts';
+    empty.textContent = 'Нет аномалий с оценкой ≥ ' + filter;
+    container.appendChild(empty);
+    return;
+  }
+  filtered.forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'sev-row sev-' + e.level;
+    const badge = document.createElement('span');
+    badge.className = 'sev-badge sev-badge-' + (e.score >= 8 ? 'high' : e.score >= 5 ? 'mid' : 'low');
+    badge.textContent = e.score;
+    const msg = document.createElement('span');
+    msg.className = 'sev-msg';
+    msg.textContent = e.msg;
+    const time = document.createElement('span');
+    time.className = 'sev-time';
+    time.textContent = e.time;
+    row.appendChild(badge); row.appendChild(msg); row.appendChild(time);
+    container.appendChild(row);
+  });
+}
+
+window.renderSeverityLog = renderSeverityLog;
+
+// ──────────────────────────────────────────────────
 // АЛЕРТЫ
 // ──────────────────────────────────────────────────
 function checkAlerts(data) {
@@ -180,10 +238,11 @@ function checkAlerts(data) {
       const now = Date.now();
       if (!last || now - last.time > 120000) {
         const msg = lvl === 'danger' ? dangerMsg : warnMsg;
-        newAlerts.push({ level: lvl, message: msg });
+        const score = addSeverityEntry(key, val, lvl, msg);
+        newAlerts.push({ level: lvl, message: msg, score });
         alertLog = alertLog.filter(a => a.key !== key);
         alertLog.push({ key, time: now });
-        logger.add('alert', msg);
+        logger.add('alert', '[S:' + score + '] ' + msg);
       }
     }
   });
@@ -201,10 +260,20 @@ function renderDashAlerts(alerts) {
 
   alerts.forEach(a => {
     const div = document.createElement('div');
-    div.className = `alert-entry ${a.level}`;
-    div.innerHTML = `<div class="ae-dot"></div><div class="ae-msg">${a.message}</div><div class="ae-time">${new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})}</div>`;
+    div.className = 'alert-entry ' + a.level;
+    const dot = document.createElement('div'); dot.className = 'ae-dot';
+    const msg = document.createElement('div'); msg.className = 'ae-msg'; msg.textContent = a.message;
+    const time = document.createElement('div'); time.className = 'ae-time';
+    time.textContent = new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+    if (a.score) {
+      const badge = document.createElement('span');
+      badge.className = 'ae-score sev-badge-' + (a.score >= 8 ? 'high' : a.score >= 5 ? 'mid' : 'low');
+      badge.textContent = 'S:' + a.score;
+      div.appendChild(dot); div.appendChild(msg); div.appendChild(badge); div.appendChild(time);
+    } else {
+      div.appendChild(dot); div.appendChild(msg); div.appendChild(time);
+    }
     list.insertBefore(div, list.firstChild);
-    // Покажем toast только для danger
     if (a.level === 'danger') toast.show(a.message, 'danger', 6000);
     else if (a.level === 'warning') toast.show(a.message, 'warning', 4000);
     while (list.children.length > 8) list.lastChild.remove();
@@ -265,7 +334,7 @@ function applyData(data) {
     if (state.currentPage === 'sensor-pressure') updateSensorPageValues('sensor-pressure', data);
   }
 
-  // PIR → авто-пауза Pomodoro (только режим 'computer', с 15-сек дебаунсом)
+  // PIR → авто-пауза + возврат (режим 'computer', 15-сек дебаунс)
   if (pomodoro.trackingMode === 'computer') {
     if (data.motion === 0) {
       if (!state._pirAbsenceStart) state._pirAbsenceStart = Date.now();
@@ -273,10 +342,30 @@ function applyData(data) {
       if (absenceSec >= 15 && pomodoro.isRunning && !pomodoro.isBreak) {
         pomodoro.autoPause('нет присутствия у стола');
         state._pirAbsenceStart = null;
+        state._pirWasPaused = true;
       }
     } else {
+      // C3: при возврате к столу — toast с предложением продолжить
+      if (state._pirWasPaused && !pomodoro.isRunning) {
+        const absMin = state._pirAbsenceStart ? Math.round((Date.now() - state._pirAbsenceStart) / 60000) : '?';
+        toast.show('👋 С возвращением! Продолжить Pomodoro? Нажмите ▶', 'info', 8000);
+        state._pirWasPaused = false;
+      }
       state._pirAbsenceStart = null;
     }
+  }
+
+  // B4: авто-предложение запустить Pomodoro при возвращении к столу (перерыв >5 мин)
+  if (!pomodoro.isRunning && !pomodoro.isBreak) {
+    const prev = state._lastMotionOff;
+    if (data.motion === 1 && prev && (Date.now() - prev) > 5 * 60 * 1000) {
+      toast.show('▶ Готов к новому Pomodoro? Нажмите Старт!', 'info', 6000);
+    }
+  }
+  if (data.motion === 0) {
+    if (!state._lastMotionOff) state._lastMotionOff = Date.now();
+  } else {
+    state._lastMotionOff = null;
   }
 
   // Движение
@@ -292,6 +381,8 @@ function applyData(data) {
   const nbMot = document.getElementById('nb-motion');
   if (nbMot) nbMot.textContent = hasMotion ? '●' : '○';
 
+  if (typeof eyeStrainModule !== 'undefined') eyeStrainModule.onMotionChange(hasMotion ? 1 : 0);
+
   // Обновить страницу датчика если открыта
   if (state.currentPage.startsWith('sensor-')) updateSensorPageValues(state.currentPage, data);
 
@@ -304,11 +395,15 @@ function applyData(data) {
   // Добавить точку на график
   addChartPoint(data);
 
+  if (typeof updateCo2Forecast === 'function') updateCo2Forecast(state.chartData);
+
   // Wellness Index
   updateWellnessCard(data);
 
   // Work Conditions Index
   updateWCITile(data);
+
+  if (typeof hydrationModule !== 'undefined') hydrationModule.render(data);
 
   // Рабочее время
   updateWorkTimeTile(data);
@@ -473,6 +568,7 @@ function init() {
   loadHistoryIntoChart();
   loadStatsFromDB();
   loadWeeklyStats();
+  if (typeof loadWellnessHistory === 'function') loadWellnessHistory();
 
   fetch('/api/sensors')
     .then(r => r.json())
@@ -505,6 +601,10 @@ function init() {
 
   // Инициализировать цель Pomodoro
   if (typeof pomodoro !== 'undefined') pomodoro.initGoal();
+
+  // Трекер воды и защита глаз
+  if (typeof hydrationModule !== 'undefined') hydrationModule.init();
+  if (typeof eyeStrainModule !== 'undefined') eyeStrainModule.init();
 }
 
 // ──────────────────────────────────────────────────

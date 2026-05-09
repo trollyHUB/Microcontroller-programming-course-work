@@ -14,6 +14,8 @@ const pomodoro = (() => {
   let _sessionStartedAt = null;
   // Режим отслеживания: 'free' | 'computer'
   let _trackingMode = localStorage.getItem('nexis-pomo-tracking') || 'free';
+  // B1: Привязка задачи к сессии
+  let _boundTask = null; // { id, text }
 
   function updateGoalDisplay() {
     const bar = document.getElementById('pomo-goal-fill');
@@ -103,7 +105,7 @@ const pomodoro = (() => {
       const typeEl = document.createElement('span');
       typeEl.className = 'ph-type';
       if (h.type === 'work') {
-        typeEl.textContent = '🍅 Работа #' + h.num + ' — ' + h.duration + ' мин';
+        typeEl.textContent = '🍅 Работа #' + h.num + ' — ' + h.duration + ' мин' + (h.task ? ' · ' + h.task : '');
       } else if (h.type === 'break') {
         typeEl.textContent = '☕ Перерыв #' + h.num;
         typeEl.style.color = 'var(--text3)';
@@ -147,8 +149,9 @@ const pomodoro = (() => {
     if (!isBreak) {
       cyclesDone++;
       localStorage.setItem('nexis-pomo-cycles', cyclesDone);
-      addEvent('work', { num: cyclesDone, duration: workMin });
-      logger.add('pomodoro', '🍅 Pomodoro #' + cyclesDone + ' завершён! (' + workMin + ' мин работы)');
+      addEvent('work', { num: cyclesDone, duration: workMin, task: _boundTask ? _boundTask.text : null });
+      logger.add('pomodoro', '🍅 Pomodoro #' + cyclesDone + ' завершён! (' + workMin + ' мин)' + (_boundTask ? ' — ' + _boundTask.text : ''));
+      _boundTask = null; updateBoundTaskDisplay();
       toast.show('🍅 Pomodoro #' + cyclesDone + ' завершён! Перерыв ' + breakMin + ' минут.', 'success', 6000);
       if (typeof getNotifSetting === 'undefined' || getNotifSetting('pomoFinished')) {
         sendNotif('🍅 Pomodoro завершён!', 'Перерыв ' + breakMin + ' минут. Молодец!');
@@ -205,6 +208,48 @@ const pomodoro = (() => {
     updateStats();
   }
 
+  // B1: показать/скрыть панель выбора задачи
+  function showTaskPicker(onPick) {
+    const panel = document.getElementById('pomo-task-picker');
+    if (!panel) { onPick(null); return; }
+    const tasks = (typeof tasksModule !== 'undefined' ? tasksModule.getTodayTasks() : []).filter(t => !t.done);
+    if (tasks.length === 0) { onPick(null); return; }
+
+    const list = document.getElementById('pomo-task-list');
+    if (!list) { onPick(null); return; }
+    while (list.firstChild) list.removeChild(list.firstChild);
+
+    const noTask = document.createElement('div');
+    noTask.className = 'ptl-item';
+    noTask.textContent = '— Без задачи';
+    noTask.addEventListener('click', () => { panel.style.display = 'none'; onPick(null); });
+    list.appendChild(noTask);
+
+    tasks.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'ptl-item';
+      item.textContent = t.text;
+      item.addEventListener('click', () => { panel.style.display = 'none'; onPick(t); });
+      list.appendChild(item);
+    });
+
+    panel.style.display = 'block';
+    document.getElementById('pomo-task-skip')?.addEventListener('click', () => {
+      panel.style.display = 'none'; onPick(null);
+    }, { once: true });
+  }
+
+  function updateBoundTaskDisplay() {
+    const el = document.getElementById('pomo-bound-task');
+    if (!el) return;
+    if (_boundTask) {
+      el.textContent = '📌 ' + _boundTask.text;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
   return {
     toggle() {
       if (running) {
@@ -215,15 +260,32 @@ const pomodoro = (() => {
           _sessionStartedAt = null;
         }
         logger.add('pomodoro', 'Pomodoro поставлен на паузу');
+        updateBtnState();
+        updateDisplay();
+      } else if (!isBreak) {
+        // B1: предложить выбрать задачу перед первым стартом цикла работы
+        showTaskPicker(task => {
+          _boundTask = task;
+          updateBoundTaskDisplay();
+          running = true;
+          _sessionStartedAt = Date.now();
+          if (!remaining) { remaining = workMin * 60; totalSec = workMin * 60; }
+          interval = setInterval(tick, 1000);
+          const taskSuffix = task ? ' — ' + task.text : '';
+          logger.add('pomodoro', 'Pomodoro запущен (' + workMin + ' мин)' + taskSuffix);
+          updateBtnState();
+          updateDisplay();
+        });
+        return;
       } else {
         running = true;
         _sessionStartedAt = Date.now();
         if (!remaining) { remaining = workMin * 60; totalSec = workMin * 60; }
         interval = setInterval(tick, 1000);
-        logger.add('pomodoro', 'Pomodoro запущен (' + (isBreak ? 'перерыв ' + breakMin : 'работа ' + workMin) + ' мин)');
+        logger.add('pomodoro', 'Pomodoro запущен (перерыв ' + breakMin + ' мин)');
+        updateBtnState();
+        updateDisplay();
       }
-      updateBtnState();
-      updateDisplay();
     },
 
     // Вызывается из app.js при PIR-авто-паузе

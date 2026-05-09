@@ -669,3 +669,331 @@ function renderHeatmap() {
   container.appendChild(legend);
 }
 
+// ──────────────────────────────────────────────────
+// B3: КОРРЕЛЯЦИЯ — среда рабочего места → продуктивность
+// ──────────────────────────────────────────────────
+let _corrChart = null;
+
+function renderCorrelationChart(metric) {
+  const canvas = document.getElementById('correlation-chart');
+  if (!canvas) return;
+
+  // Группируем chartData по часам: для каждого часа — среднее metric + кол-во поводоро
+  const hourBuckets = {};
+  state.chartData.forEach(pt => {
+    if (!pt.full || pt.full[metric] == null || !pt.full.timestamp) return;
+    const h = new Date(pt.full.timestamp).getHours();
+    if (!hourBuckets[h]) hourBuckets[h] = { metricSum: 0, count: 0 };
+    hourBuckets[h].metricSum += pt.full[metric];
+    hourBuckets[h].count++;
+  });
+
+  // Pomodoro по часам из localStorage history
+  const pomoLog = JSON.parse(localStorage.getItem('nexis-pomo-history-by-hour') || '{}');
+
+  // Demo: генерируем синтетические данные с реалистичной корреляцией
+  const points = [];
+  if (state.mode === 'demo') {
+    // CO₂ vs pomodoro: антикорреляция — при высоком CO₂ меньше помодоро
+    for (let i = 0; i < 24; i++) {
+      const base = { co2: 600 + Math.random() * 600, temperature: 20 + Math.random() * 8, humidity: 35 + Math.random() * 40, noise: 30 + Math.random() * 45, light: 100 + Math.random() * 700 };
+      const metricVal = base[metric] != null ? base[metric] : base.co2;
+      // Антикорреляция с CO₂, прямая — с остальными
+      let pomo;
+      if (metric === 'co2') pomo = Math.max(0, Math.round(4 - (metricVal - 600) / 200 + Math.random() * 1.5));
+      else if (metric === 'noise') pomo = Math.max(0, Math.round(4 - (metricVal - 30) / 15 + Math.random() * 1.5));
+      else pomo = Math.max(0, Math.round(1 + Math.random() * 3));
+      points.push({ x: Math.round(metricVal * 10) / 10, y: pomo });
+    }
+  } else {
+    Object.entries(hourBuckets).forEach(([h, data]) => {
+      if (data.count === 0) return;
+      points.push({ x: Math.round(data.metricSum / data.count * 10) / 10, y: parseInt(pomoLog[h] || 0) });
+    });
+  }
+
+  if (points.length < 3) {
+    const msg = document.getElementById('correlation-msg');
+    if (msg) msg.textContent = 'Недостаточно данных для корреляции (нужно больше истории)';
+    return;
+  }
+
+  // Линия тренда (МНК)
+  const n = points.length;
+  let sx = 0, sy = 0, sxy = 0, sx2 = 0;
+  points.forEach(p => { sx += p.x; sy += p.y; sxy += p.x * p.y; sx2 += p.x * p.x; });
+  const slope = (n * sxy - sx * sy) / (n * sx2 - sx * sx);
+  const intercept = (sy - slope * sx) / n;
+
+  const xMin = Math.min(...points.map(p => p.x));
+  const xMax = Math.max(...points.map(p => p.x));
+  const trendLine = [{ x: xMin, y: Math.max(0, intercept + slope * xMin) }, { x: xMax, y: Math.max(0, intercept + slope * xMax) }];
+
+  // Корреляция Пирсона
+  const meanX = sx / n, meanY = sy / n;
+  let num = 0, d1 = 0, d2 = 0;
+  points.forEach(p => { num += (p.x - meanX) * (p.y - meanY); d1 += (p.x - meanX) ** 2; d2 += (p.y - meanY) ** 2; });
+  const r = d1 * d2 > 0 ? num / Math.sqrt(d1 * d2) : 0;
+
+  const metaLabels = { co2: 'CO₂ (ppm)', temperature: 'Температура (°C)', humidity: 'Влажность (%)', noise: 'Шум (dB)', light: 'Освещённость (lux)' };
+
+  if (_corrChart) { _corrChart.destroy(); _corrChart = null; }
+  _corrChart = new Chart(canvas, {
+    data: {
+      datasets: [
+        { type: 'scatter', label: 'Час дня', data: points, backgroundColor: 'rgba(77,158,255,0.65)', pointRadius: 7, pointHoverRadius: 9 },
+        { type: 'line', label: 'Тренд', data: trendLine, borderColor: slope < 0 ? '#f97316' : '#20c97a', borderDash: [5, 4], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: 'var(--text2)', font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.type === 'scatter' ? (metaLabels[metric] + ': ' + ctx.parsed.x + ' → ' + ctx.parsed.y + ' помодоро') : '' } }
+      },
+      scales: {
+        x: { title: { display: true, text: metaLabels[metric] || metric, color: 'var(--text3)' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text3)' } },
+        y: { title: { display: true, text: 'Pomodoro / час', color: 'var(--text3)' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text3)', stepSize: 1 }, min: 0 }
+      }
+    }
+  });
+
+  // Вывод: вывод корреляции
+  const msg = document.getElementById('correlation-msg');
+  if (msg) {
+    const rStr = Math.abs(r).toFixed(2);
+    const dir = slope < 0 ? '↓ отрицательная' : '↑ положительная';
+    const str = Math.abs(r) > 0.6 ? 'сильная' : Math.abs(r) > 0.3 ? 'умеренная' : 'слабая';
+    const insight = metric === 'co2' && slope < -0.01 ? 'При CO₂ < 800 ppm продуктивность выше' : metric === 'noise' && slope < -0.01 ? 'Шум снижает концентрацию' : 'Нет выраженной зависимости';
+    msg.textContent = 'Корреляция: r = ' + rStr + ' (' + str + ', ' + dir + ') · ' + insight;
+    msg.style.color = Math.abs(r) > 0.5 ? '#f97316' : 'var(--text3)';
+  }
+}
+
+function initCorrelation() {
+  const btns = document.querySelectorAll('.corr-metric-btn');
+  let activeMetric = 'co2';
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeMetric = btn.dataset.metric;
+      renderCorrelationChart(activeMetric);
+    });
+  });
+  renderCorrelationChart(activeMetric);
+}
+
+// ──────────────────────────────────────────────────
+// B2: Daily Digest — сводка дня
+// ──────────────────────────────────────────────────
+function generateDailyDigest() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ru', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Pomodoro
+  const pomoCycles = parseInt(localStorage.getItem('nexis-pomo-cycles') || '0');
+  const pomoMins = pomoCycles * 25;
+
+  // Tasks
+  let tasksDone = 0, tasksTotal = 0;
+  if (typeof tasksModule !== 'undefined') {
+    const p = tasksModule.getProgress();
+    tasksDone = p.done; tasksTotal = p.total;
+  }
+
+  // Sensors (last known)
+  const s = (typeof state !== 'undefined') ? state.sensors : {};
+  const avgCo2 = s.co2 ? Math.round(s.co2) : '--';
+  const avgTemp = s.temperature ? s.temperature.toFixed(1) : '--';
+  const avgHum  = s.humidity ? Math.round(s.humidity) : '--';
+
+  // WI
+  let wiStr = '--';
+  if (typeof calcWellnessIndex !== 'undefined' && s.co2) {
+    wiStr = calcWellnessIndex(s).index + '/100';
+  }
+
+  // Energy
+  let energyStr = '';
+  if (typeof energyModule !== 'undefined') {
+    const lvl = energyModule.getCurrent();
+    if (lvl > 0) energyStr = '\n⚡ Уровень энергии: ' + ['', 'Истощён', 'Устал', 'Нормально', 'Хорошо', 'Отлично!'][lvl] + ' (' + lvl + '/5)';
+  }
+
+  // Hydration
+  let hydStr = '';
+  if (typeof hydrationModule !== 'undefined') {
+    const drunk = hydrationModule.getDrunk();
+    const goal  = hydrationModule.getGoalGlasses();
+    if (drunk > 0) hydStr = '\n💧 Гидратация: ' + drunk + ' / ' + goal + ' стаканов';
+  }
+
+  const lines = [
+    '═══════════════════════════════',
+    '📋 NEXIS Daily Digest',
+    '📅 ' + dateStr,
+    '═══════════════════════════════',
+    '',
+    '🍅 Pomodoro: ' + pomoCycles + ' цикл(а) · ' + pomoMins + ' мин фокуса',
+    '✅ Задачи: ' + tasksDone + ' / ' + tasksTotal + ' выполнено',
+    '',
+    '🌿 Условия рабочего места:',
+    '   CO₂: ' + avgCo2 + ' ppm',
+    '   Температура: ' + avgTemp + '°C',
+    '   Влажность: ' + avgHum + '%',
+    '   Wellness Index: ' + wiStr,
+    energyStr,
+    hydStr,
+    '',
+    '═══════════════════════════════',
+    '🤖 NEXIS Wellness Station v2',
+  ].join('\n').trim();
+
+  // Show modal
+  const modal = document.getElementById('digest-modal');
+  const text  = document.getElementById('digest-text');
+  if (modal && text) {
+    text.textContent = lines;
+    modal.style.display = 'flex';
+  }
+}
+
+function sendDigestToTelegram() {
+  const text = document.getElementById('digest-text');
+  if (!text || !text.textContent) return;
+  const btn = document.getElementById('digest-tg-btn');
+  if (btn) { btn.textContent = '⏳ Отправка...'; btn.disabled = true; }
+  fetch('/api/telegram/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text.textContent }),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (btn) { btn.textContent = '✈ Telegram'; btn.disabled = false; }
+    if (d.status === 'ok') toast.show('✅ Дайджест отправлен в Telegram!', 'success', 3000);
+    else toast.show('⚠️ Telegram не настроен (нет токена)', 'warning', 4000);
+  })
+  .catch(() => {
+    if (btn) { btn.textContent = '✈ Telegram'; btn.disabled = false; }
+    toast.show('❌ Ошибка отправки в Telegram', 'danger', 4000);
+  });
+}
+
+window.generateDailyDigest = generateDailyDigest;
+window.sendDigestToTelegram = sendDigestToTelegram;
+
+// ──────────────────────────────────────────────────
+// D1: PDF-отчёт за неделю
+// ──────────────────────────────────────────────────
+function generatePDFReport() {
+  if (typeof window.jspdf === 'undefined') {
+    toast.show('⏳ Загрузка jsPDF...', 'info', 2000);
+    setTimeout(generatePDFReport, 1500);
+    return;
+  }
+  toast.show('📄 Генерация PDF...', 'info', 3000);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; // A4 width mm
+  let y = 18;
+
+  // ─── Header ───
+  doc.setFillColor(13, 17, 30);
+  doc.rect(0, 0, W, 30, 'F');
+  doc.setTextColor(77, 158, 255);
+  doc.setFontSize(20); doc.setFont('helvetica', 'bold');
+  doc.text('NEXIS Wellness Station', 14, 14);
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 190, 220);
+  doc.text('Недельный отчёт · ' + new Date().toLocaleDateString('ru', { year: 'numeric', month: 'long', day: 'numeric' }), 14, 22);
+  doc.setTextColor(30, 30, 30);
+  y = 40;
+
+  // ─── Sensor summary ───
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+  doc.text('Сводка показаний', 14, y); y += 8;
+
+  const s = (typeof state !== 'undefined') ? state.sensors : {};
+  const rows = [
+    ['Температура', (s.temperature != null ? s.temperature.toFixed(1) + ' °C' : '--')],
+    ['Влажность',   (s.humidity    != null ? Math.round(s.humidity) + ' %'   : '--')],
+    ['CO₂',         (s.co2         != null ? Math.round(s.co2) + ' ppm'      : '--')],
+    ['Освещённость',(s.light       != null ? Math.round(s.light) + ' lux'    : '--')],
+    ['Шум',         (s.noise       != null ? s.noise.toFixed(1) + ' dB'      : '--')],
+    ['Давление',    (s.pressure    != null ? Math.round(s.pressure) + ' hPa' : '--')],
+  ];
+
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  rows.forEach(([label, val]) => {
+    doc.setFillColor(240, 243, 255);
+    doc.rect(14, y - 5, 182, 7, 'F');
+    doc.setTextColor(60, 60, 80); doc.text(label, 18, y);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 30);
+    doc.text(val, 130, y);
+    doc.setFont('helvetica', 'normal');
+    y += 9;
+  });
+
+  // ─── Pomodoro stats ───
+  y += 6;
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 30);
+  doc.text('Продуктивность', 14, y); y += 8;
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  const pomoCycles = parseInt(localStorage.getItem('nexis-pomo-cycles') || '0');
+  const pomoMins   = pomoCycles * 25;
+  let tasksDone = 0, tasksTotal = 0;
+  if (typeof tasksModule !== 'undefined') { const p = tasksModule.getProgress(); tasksDone = p.done; tasksTotal = p.total; }
+
+  [[' Pomodoro циклов сегодня', pomoCycles], [' Минут глубокой работы', pomoMins], [' Задач выполнено', tasksDone + ' / ' + tasksTotal]].forEach(([label, val]) => {
+    doc.setFillColor(240, 243, 255);
+    doc.rect(14, y - 5, 182, 7, 'F');
+    doc.setTextColor(60, 60, 80); doc.text(label, 18, y);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 30);
+    doc.text(String(val), 130, y);
+    doc.setFont('helvetica', 'normal');
+    y += 9;
+  });
+
+  // ─── Capture main chart ───
+  const chartCanvas = document.getElementById('mainChart') || document.getElementById('analyticsChart');
+  if (chartCanvas) {
+    try {
+      y += 6;
+      doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+      doc.text('График показаний', 14, y); y += 4;
+      const imgData = chartCanvas.toDataURL('image/png');
+      const imgW = 182, imgH = Math.round(imgW * chartCanvas.height / chartCanvas.width);
+      const maxH = 70;
+      const finalH = Math.min(imgH, maxH);
+      doc.addImage(imgData, 'PNG', 14, y, imgW, finalH);
+      y += finalH + 8;
+    } catch(e) { /* canvas may be tainted in some browsers */ }
+  }
+
+  // ─── WI History chart ───
+  const wiCanvas = document.getElementById('wi-history-chart');
+  if (wiCanvas && y < 240) {
+    try {
+      doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+      doc.text('Wellness Index — 7 дней', 14, y); y += 4;
+      const imgData2 = wiCanvas.toDataURL('image/png');
+      doc.addImage(imgData2, 'PNG', 14, y, 182, 50);
+      y += 58;
+    } catch(e) {}
+  }
+
+  // ─── Footer ───
+  const pageH = 297;
+  doc.setFontSize(8); doc.setTextColor(150, 150, 170);
+  doc.text('Сгенерировано NEXIS Wellness Station · ' + new Date().toLocaleString('ru'), 14, pageH - 8);
+  doc.text('PM3304 · ЕНУ им. Л.Н. Гумилёва · 2026', W - 14, pageH - 8, { align: 'right' });
+
+  const fname = 'NEXIS_Report_' + new Date().toISOString().slice(0, 10) + '.pdf';
+  doc.save(fname);
+  toast.show('✅ PDF сохранён: ' + fname, 'success', 4000);
+}
+
+window.generatePDFReport = generatePDFReport;

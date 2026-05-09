@@ -20,6 +20,12 @@ import os
 from datetime import datetime, timedelta
 
 try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+try:
     import httpx
     _HTTPX_AVAILABLE = True
 except ImportError:
@@ -518,6 +524,22 @@ async def pomodoro_stats():
     for r in rows:
         result[r['type']] = {'count': r['count'], 'total_mins': r['total_mins']}
     return result
+
+
+# ──────────────────────────────────────────
+# API — TELEGRAM (ручная отправка)
+# ──────────────────────────────────────────
+
+class TelegramSendRequest(BaseModel):
+    message: str
+
+@app.post('/api/telegram/send', summary="Отправить сообщение в Telegram", tags=["Система"])
+async def telegram_send(req: TelegramSendRequest):
+    """Отправляет произвольное сообщение через настроенного Telegram-бота."""
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        return {'status': 'error', 'detail': 'Telegram не настроен'}
+    await send_telegram(req.message)
+    return {'status': 'ok'}
 
 
 # ──────────────────────────────────────────

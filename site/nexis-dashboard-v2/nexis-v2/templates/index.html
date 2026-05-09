@@ -11,9 +11,25 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+
+<!-- A1: Eye Strain Overlay (правило 20-20-20) -->
+<div class="eye-strain-overlay" id="eye-strain-overlay" style="display:none">
+  <div class="eye-strain-box">
+    <div class="eye-strain-icon">&#128065;</div>
+    <div class="eye-strain-title">Время отдохнуть глазам!</div>
+    <div class="eye-strain-desc">Посмотрите на предмет дальше 6 метров</div>
+    <div class="eye-strain-timer">
+      <div class="eye-strain-countdown" id="eye-strain-countdown">20</div>
+      <div class="eye-strain-sec">секунд</div>
+    </div>
+    <div class="eye-strain-rule">Правило 20-20-20: каждые 20 минут — 20 секунд вдаль</div>
+    <button class="eye-strain-skip" id="eye-strain-skip">Пропустить</button>
+  </div>
+</div>
 
 <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <aside class="sidebar" id="sidebar">
@@ -330,6 +346,76 @@
         <div class="alerts-list" id="dashAlerts"><div class="no-alerts">Нет уведомлений</div></div>
       </div>
     </div>
+
+    <!-- D2: Прогноз CO₂ + A2: Гидратация -->
+    <div class="dash-health-row">
+      <div class="forecast-card">
+        <div class="card-title">&#128203; Прогноз CO₂</div>
+        <div class="forecast-body">
+          <div class="forecast-vals">
+            <div class="forecast-val-item">
+              <div class="forecast-val-num" id="co2-forecast-30">--</div>
+              <div class="forecast-val-label">через 30 мин</div>
+            </div>
+            <div class="forecast-trend" id="co2-forecast-trend">→</div>
+            <div class="forecast-val-item">
+              <div class="forecast-val-num" id="co2-forecast-60">--</div>
+              <div class="forecast-val-label">через 60 мин</div>
+            </div>
+          </div>
+          <div class="forecast-msg" id="co2-forecast-msg">Накапливаются данные...</div>
+        </div>
+      </div>
+
+      <div class="hydration-card">
+        <div class="card-title">&#128167; Гидратация</div>
+        <div class="hydration-body">
+          <div class="hydration-top">
+            <div class="hydration-count-wrap">
+              <span class="hydration-count" id="hydration-count">0</span>
+              <span class="hydration-goal-lbl" id="hydration-goal">8 стак.</span>
+            </div>
+            <button class="hydration-add-btn" id="hydration-add-btn" title="Выпил стакан воды">+💧</button>
+          </div>
+          <div class="hydration-bar-track">
+            <div class="hydration-bar-fill" id="hydration-bar-fill" style="width:0%"></div>
+          </div>
+          <div class="hydration-label" id="hydration-label">0 / 8 стаканов (0%)</div>
+          <div class="hydration-hint" id="hydration-hint">Пейте больше воды</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A3 + A4: Circadian Score + Pressure Comfort -->
+    <div class="dash-health-row" style="margin-top:0">
+      <div class="circadian-card">
+        <div class="card-title">&#9728; Циркадный световой индекс</div>
+        <div class="circadian-body">
+          <div class="circadian-score-wrap">
+            <span class="circadian-score" id="circadian-score">--</span>
+            <span class="circadian-max">/100</span>
+          </div>
+          <div class="circadian-rec" id="circadian-rec">Загрузка...</div>
+        </div>
+      </div>
+      <div class="pressure-comfort-card">
+        <div class="card-title">&#127966; Барокомфорт</div>
+        <div class="pressure-comfort-body">
+          <div class="pressure-comfort-msg" id="pressure-comfort-msg">Накапливаются данные о давлении...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2: История Wellness Index за 7 дней -->
+    <div class="wi-history-card">
+      <div class="card-header">
+        <span class="card-title">&#127775; Wellness Index — 7 дней</span>
+        <span class="wi-history-summary" id="wi-history-summary"></span>
+      </div>
+      <div class="wi-history-wrap" id="wi-history-wrap">
+        <canvas id="wi-history-chart"></canvas>
+      </div>
+    </div>
   </div>
 
   <!-- ═══ СТРАНИЦА: АНАЛИТИКА ═══ -->
@@ -424,6 +510,57 @@
       <div class="heatmap-wrap" id="heatmap-container"></div>
     </div>
 
+    <!-- B2: Daily Digest -->
+    <div class="daily-digest-card">
+      <div class="daily-digest-info">
+        <div class="daily-digest-icon">&#128203;</div>
+        <div>
+          <div class="daily-digest-title">Дайджест дня</div>
+          <div class="daily-digest-desc">Краткая текстовая сводка по всем показателям за сегодня — для отчёта или дневника.</div>
+        </div>
+      </div>
+      <button class="daily-digest-btn" onclick="generateDailyDigest()">&#128203; Создать дайджест</button>
+    </div>
+
+    <!-- B3: Корреляция среда → продуктивность -->
+    <div class="analytics-chart-card" style="margin-top:20px" id="correlation-section">
+      <div class="card-header">
+        <span class="card-title">&#128279; Среда → Продуктивность</span>
+        <div class="corr-metric-btns">
+          <button class="corr-metric-btn active" data-metric="co2">CO₂</button>
+          <button class="corr-metric-btn" data-metric="temperature">Температура</button>
+          <button class="corr-metric-btn" data-metric="humidity">Влажность</button>
+          <button class="corr-metric-btn" data-metric="noise">Шум</button>
+          <button class="corr-metric-btn" data-metric="light">Свет</button>
+        </div>
+      </div>
+      <div class="analytics-chart-wrap" style="height:280px"><canvas id="correlation-chart"></canvas></div>
+      <div class="correlation-msg" id="correlation-msg">Накапливаются данные для корреляционного анализа...</div>
+    </div>
+
+    <!-- D3: Журнал аномалий с Severity Score -->
+    <div class="severity-log-card">
+      <div class="card-header">
+        <span class="card-title">&#9888; Журнал аномалий</span>
+        <div class="severity-filter-row">
+          <span class="severity-filter-label">Мин. оценка:</span>
+          <select id="severity-filter" class="severity-filter-select" onchange="renderSeverityLog(parseInt(this.value))">
+            <option value="1">Все (≥1)</option>
+            <option value="4">Средние (≥4)</option>
+            <option value="7">Высокие (≥7)</option>
+          </select>
+        </div>
+      </div>
+      <div class="severity-legend">
+        <span class="sev-badge sev-badge-low">1–4</span> Слабые &nbsp;
+        <span class="sev-badge sev-badge-mid">5–7</span> Средние &nbsp;
+        <span class="sev-badge sev-badge-high">8–10</span> Критические
+      </div>
+      <div class="severity-log-list" id="severity-log-list">
+        <div class="no-alerts">Аномалии появятся при получении данных...</div>
+      </div>
+    </div>
+
     <!-- Печать / Экспорт отчёта -->
     <div class="print-report-card">
       <div class="print-report-info">
@@ -433,10 +570,16 @@
           <div class="print-report-desc">Сохранить страницу как PDF или распечатать. Боковая панель и кнопки будут скрыты, останутся только данные и графики.</div>
         </div>
       </div>
-      <button class="print-report-btn" id="printReportBtn" onclick="printReport()">
-        <span class="print-report-btn-icon">&#128438;</span>
-        <span>Печать / PDF</span>
-      </button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="print-report-btn" id="printReportBtn" onclick="printReport()">
+          <span class="print-report-btn-icon">&#128438;</span>
+          <span>Печать / PDF</span>
+        </button>
+        <button class="print-report-btn" style="background:var(--red);border-color:var(--red)" onclick="generatePDFReport()">
+          <span class="print-report-btn-icon">&#128196;</span>
+          <span>Скачать PDF-отчёт</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -495,6 +638,14 @@
           </div>
           <div class="pomo-tracking-hint" id="pomo-tracking-hint">Таймер идёт всегда, PIR не влияет</div>
         </div>
+        <!-- B1: Привязка задачи -->
+        <div class="pomo-task-picker" id="pomo-task-picker" style="display:none">
+          <div class="ptl-title">📌 Выберите задачу для этой сессии</div>
+          <div class="pomo-task-list" id="pomo-task-list"></div>
+          <button class="ptl-skip-btn" id="pomo-task-skip">Пропустить →</button>
+        </div>
+        <div class="pomo-bound-task" id="pomo-bound-task" style="display:none"></div>
+
         <!-- Цель дня -->
         <div class="pomo-goal-wrap">
           <div class="pomo-goal-header">
@@ -1122,6 +1273,13 @@
             <input type="text" id="task-input" class="task-input" placeholder="Новая задача... (Enter для добавления)" maxlength="200">
             <button class="task-add-btn" id="task-add-btn">+ Добавить</button>
           </div>
+          <!-- C1: Приоритет задачи -->
+          <div class="task-priority-row">
+            <span class="task-pri-label">Приоритет:</span>
+            <button class="task-pri-btn" data-priority="high" title="Высокий">🔴 Высокий</button>
+            <button class="task-pri-btn active" data-priority="medium" title="Средний">🟡 Средний</button>
+            <button class="task-pri-btn" data-priority="low" title="Низкий">🟢 Низкий</button>
+          </div>
           <div class="task-progress-wrap">
             <div class="task-progress-bar">
               <div class="task-progress-fill" id="task-progress-fill" style="width:0%"></div>
@@ -1164,11 +1322,54 @@
           </div>
           <div class="stretch-status" id="stretch-status">Напоминание активно</div>
         </div>
+
+        <!-- Защита глаз (Eye Strain) -->
+        <div class="settings-section">
+          <div class="settings-section-title">&#128065; Защита глаз (20-20-20)</div>
+          <p class="settings-hint">Каждые 20 минут — напоминание посмотреть вдаль 20 секунд.</p>
+          <div class="stretch-row">
+            <label class="settings-label">Включить:</label>
+            <input type="checkbox" id="eye-strain-toggle" style="width:18px;height:18px;cursor:pointer">
+          </div>
+          <div class="stretch-row" style="margin-top:8px">
+            <span class="stretch-label">Интервал:</span>
+            <input type="number" id="eye-strain-interval" class="pomo-custom-input" min="5" max="60" value="20">
+            <span class="stretch-label">мин</span>
+          </div>
+        </div>
+
+        <!-- Гидратация -->
+        <div class="settings-section">
+          <div class="settings-section-title">&#128167; Гидратация</div>
+          <p class="settings-hint">Напоминание выпить стакан воды.</p>
+          <div class="stretch-row">
+            <span class="stretch-label">Интервал:</span>
+            <input type="number" id="hydration-interval-input" class="pomo-custom-input" min="10" max="180" value="45">
+            <span class="stretch-label">мин</span>
+            <button class="pomo-custom-btn" onclick="const v=parseInt(document.getElementById('hydration-interval-input').value)||45; localStorage.setItem('nexis-hydration-interval', v); toast.show('Интервал гидратации: ' + v + ' мин', 'info', 2000)">Применить</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
 </div><!-- end .main -->
+
+<!-- B2: Daily Digest Modal -->
+<div class="digest-modal" id="digest-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="digest-modal-box">
+    <div class="digest-modal-header">
+      <span class="digest-modal-title">&#128203; Дайджест дня</span>
+      <button class="digest-modal-close" onclick="document.getElementById('digest-modal').style.display='none'">×</button>
+    </div>
+    <pre class="digest-text" id="digest-text"></pre>
+    <div class="digest-modal-actions">
+      <button class="digest-copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('digest-text').textContent).then(()=>toast.show('Скопировано!','success',2000))">&#128203; Копировать</button>
+      <button class="digest-tg-btn" id="digest-tg-btn" onclick="sendDigestToTelegram()">&#9992; Telegram</button>
+      <button class="digest-close-btn" onclick="document.getElementById('digest-modal').style.display='none'">Закрыть</button>
+    </div>
+  </div>
+</div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
