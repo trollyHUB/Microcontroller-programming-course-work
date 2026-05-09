@@ -91,6 +91,14 @@
       <span class="nav-icon">&#127813;</span>
       <span class="nav-text">Pomodoro</span>
     </a>
+    <a class="nav-item" data-page="timer" href="#">
+      <span class="nav-icon">&#9201;</span>
+      <span class="nav-text">Таймер</span>
+    </a>
+    <a class="nav-item" data-page="tasks" href="#">
+      <span class="nav-icon">&#9989;</span>
+      <span class="nav-text">Задачи</span>
+    </a>
     <a class="nav-item" data-page="logs" href="#">
       <span class="nav-icon">&#128203;</span>
       <span class="nav-text">Журнал</span>
@@ -122,6 +130,9 @@
       <span class="theme-btn-icon" id="themeIcon">☀️</span>
       <span class="theme-btn-label" id="themeLabel">Светлая тема</span>
     </button>
+    <button class="focus-mode-sidebar-btn" id="focusModeSidebarBtn" onclick="toggleFocusMode()" title="Focus Mode — полный экран, только контент">
+      <span class="esp-text">🎯 Focus Mode</span>
+    </button>
   </div>
 </aside>
 
@@ -133,6 +144,7 @@
     <button class="menu-btn" id="menuBtn">&#9776;</button>
     <span class="topbar-title" id="topbarTitle">Dashboard</span>
     <div class="topbar-right">
+      <button class="focus-mode-btn" id="focusModeBtn" onclick="toggleFocusMode()" title="Focus Mode">&#9654;&#9654;</button>
       <span class="topbar-time" id="topbarTime"></span>
     </div>
   </header>
@@ -153,6 +165,7 @@
         </div>
         <div class="tile-value"><span id="d-temp">--</span><span class="tile-unit" id="tu-unit">°C</span></div>
         <div class="tile-status" id="ds-temp">--</div>
+        <div class="tile-humidex" id="humidex-val"></div>
         <div class="tile-bar"><div class="tile-bar-fill" id="db-temp"></div></div>
         <div class="spark-wrap"><canvas id="spark-temp"></canvas></div>
       </div>
@@ -257,6 +270,7 @@
         <div class="ws-comp" title="Влажность"><span class="ws-dot" id="wc-bar-humidity"></span><span class="ws-comp-lbl">Влаж</span><span class="ws-comp-val" id="wc-val-humidity">--</span></div>
         <div class="ws-comp" title="Освещённость"><span class="ws-dot" id="wc-bar-light"></span><span class="ws-comp-lbl">Свет</span><span class="ws-comp-val" id="wc-val-light">--</span></div>
         <div class="ws-comp" title="Шум"><span class="ws-dot" id="wc-bar-noise"></span><span class="ws-comp-lbl">Шум</span><span class="ws-comp-val" id="wc-val-noise">--</span></div>
+        <span class="iaq-badge" id="iaq-badge">IAQ: —</span>
       </div>
     </div>
 
@@ -348,6 +362,27 @@
       <div class="analytics-chart-wrap"><canvas id="analyticsChart"></canvas></div>
     </div>
 
+    <!-- Общая сводная таблица -->
+    <div class="analytics-summary-card">
+      <div class="card-title">&#128202; Общая сводка за период</div>
+      <div class="analytics-summary-wrap">
+        <table class="summary-table" id="summaryTable">
+          <thead>
+            <tr>
+              <th>Параметр</th>
+              <th>Мин</th>
+              <th>Среднее</th>
+              <th>Макс</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody">
+            <tr><td colspan="5" class="summary-empty">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="analytics-stats-section">
       <div class="card-title" style="margin-bottom:14px">Сводная статистика</div>
       <div class="analytics-stats-grid" id="analyticsStatsGrid"></div>
@@ -365,6 +400,28 @@
         </div>
       </div>
       <div class="analytics-chart-wrap"><canvas id="comparisonChart"></canvas></div>
+    </div>
+
+    <!-- Streak + Сравнение недель -->
+    <div class="analytics-row-two">
+      <div class="analytics-streak-card">
+        <div class="card-title">&#128293; Серия дней</div>
+        <div class="analytics-streak-val" id="analytics-streak">&#128293; Серия: —</div>
+        <div class="analytics-streak-hint">Дни с &#8805;4 помидоро засчитываются</div>
+      </div>
+      <div class="analytics-week-comp-card">
+        <div class="card-header">
+          <span class="card-title">&#128198; Эта неделя vs прошлая</span>
+          <span class="week-comp-delta" id="week-comp-delta"></span>
+        </div>
+        <div class="analytics-chart-wrap" style="height:160px"><canvas id="week-comparison-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Heatmap продуктивности -->
+    <div class="analytics-heatmap-card">
+      <div class="card-title">&#127919; Активность по часам и дням</div>
+      <div class="heatmap-wrap" id="heatmap-container"></div>
     </div>
 
     <!-- Печать / Экспорт отчёта -->
@@ -429,6 +486,31 @@
           <span class="pomo-custom-sep">мин</span>
           <button class="pomo-custom-btn" onclick="pomodoro.applyCustom()">Применить</button>
         </div>
+        <!-- Режим отслеживания -->
+        <div class="pomo-tracking-row">
+          <span class="pomo-tracking-label">&#128247; Режим отслеживания</span>
+          <div class="pomo-tracking-btns">
+            <button class="pomo-track-btn active" data-mode="free" onclick="pomodoro.setTrackingMode('free')" title="Таймер работает всегда — можно писать в тетрадь, читать, думать">&#128221; Свободный</button>
+            <button class="pomo-track-btn" data-mode="computer" onclick="pomodoro.setTrackingMode('computer')" title="Авто-пауза через 15 сек если ушёл от стола (PIR датчик)">&#128187; За компом</button>
+          </div>
+          <div class="pomo-tracking-hint" id="pomo-tracking-hint">Таймер идёт всегда, PIR не влияет</div>
+        </div>
+        <!-- Цель дня -->
+        <div class="pomo-goal-wrap">
+          <div class="pomo-goal-header">
+            <span class="pomo-goal-title">&#127919; Цель дня</span>
+            <span class="pomo-goal-count" id="pomo-goal-label">0 / 8 помидоров</span>
+          </div>
+          <div class="pomo-goal-bar"><div class="pomo-goal-fill" id="pomo-goal-fill" style="width:0%"></div></div>
+        </div>
+        <!-- Deep Work -->
+        <div class="deep-work-row">
+          <label class="deep-work-label">
+            <input type="checkbox" id="deepWorkCb" onchange="pomodoro.toggleDeepWork(this.checked)">
+            <span class="deep-work-text">&#9889; Deep Work — режим глубокой концентрации</span>
+          </label>
+          <div class="deep-work-indicator" id="deep-work-indicator" style="display:none">&#9679; Deep Work активен</div>
+        </div>
       </div>
       <div class="pomo-side">
         <div class="pomo-info-card">
@@ -438,6 +520,7 @@
             <div class="psl"><span>Минут фокуса</span><b id="ps-mins">0</b></div>
             <div class="psl"><span>Текущий режим</span><b id="ps-mode">25/5</b></div>
             <div class="psl"><span>Статус</span><b id="ps-status">Остановлен</b></div>
+            <div class="psl"><span>Отслеживание</span><b id="ps-tracking">📓 Свободный</b></div>
           </div>
         </div>
         <div class="pomo-info-card">
@@ -882,8 +965,47 @@
           <div class="int-step"><span class="int-num">2</span><span>В Home Assistant откройте <code>configuration.yaml</code></span></div>
           <div class="int-step"><span class="int-num">3</span><span>Добавьте блок и укажите IP вашего компьютера вместо <code>SERVER_IP</code></span></div>
         </div>
-        <div class="code-block">sensor:<br>&nbsp;&nbsp;- platform: rest<br>&nbsp;&nbsp;&nbsp;&nbsp;resource: http://SERVER_IP:5000/api/ha-sensor<br>&nbsp;&nbsp;&nbsp;&nbsp;name: "NEXIS CO2"<br>&nbsp;&nbsp;&nbsp;&nbsp;value_template: "{{ value_json.co2 }}"<br>&nbsp;&nbsp;&nbsp;&nbsp;unit_of_measurement: "ppm"<br>&nbsp;&nbsp;&nbsp;&nbsp;scan_interval: 30</div>
+        <div class="code-block">sensor:<br>&nbsp;&nbsp;- platform: rest<br>&nbsp;&nbsp;&nbsp;&nbsp;resource: http://SERVER_IP:5000/api/ha-sensor<br>&nbsp;&nbsp;&nbsp;&nbsp;name: "NEXIS CO2"<br>&nbsp;&nbsp;&nbsp;&nbsp;value_template: "{% raw %}{{ value_json.co2 }}{% endraw %}"<br>&nbsp;&nbsp;&nbsp;&nbsp;unit_of_measurement: "ppm"<br>&nbsp;&nbsp;&nbsp;&nbsp;scan_interval: 30</div>
         <a class="settings-btn-export" href="/api/ha-sensor" target="_blank">&#128279; Открыть /api/ha-sensor</a>
+      </div>
+
+      <!-- Push уведомления -->
+      <div class="settings-card">
+        <div class="card-title">&#128276; Push-уведомления</div>
+        <p class="settings-hint">Браузерные уведомления когда NEXIS свёрнут. Требуется разрешение браузера.</p>
+        <button class="settings-btn-save" onclick="requestNotifPermission()">&#128276; Разрешить уведомления</button>
+        <div class="notif-settings-list" style="margin-top:14px">
+          <label class="notif-setting-row">
+            <input type="checkbox" id="notif-co2" checked>
+            <span>CO₂ алерт (при критическом значении)</span>
+          </label>
+          <label class="notif-setting-row">
+            <input type="checkbox" id="notif-pomo" checked>
+            <span>Pomodoro завершён</span>
+          </label>
+          <label class="notif-setting-row">
+            <input type="checkbox" id="notif-stretch" checked>
+            <span>Напоминание о разминке</span>
+          </label>
+        </div>
+        <button class="settings-btn-save" style="margin-top:12px" onclick="saveNotifSettings()">&#10003; Сохранить настройки уведомлений</button>
+        <div style="margin-top:8px">
+          <span class="settings-label">Интервал разминки:</span>
+          <input type="number" id="stretch-interval-settings" class="pomo-custom-input" min="10" max="180" value="60">
+          <span class="settings-label">мин</span>
+          <button class="pomo-custom-btn" onclick="const v=parseInt(document.getElementById('stretch-interval-settings').value)||60; if(typeof stretchReminder!=='undefined') stretchReminder.updateInterval(v)">Применить</button>
+        </div>
+      </div>
+
+      <!-- Цель Pomodoro -->
+      <div class="settings-card">
+        <div class="card-title">&#127919; Цель помидоров в день</div>
+        <p class="settings-hint">Ежедневная цель помодоро. Прогресс отображается на странице Pomodoro.</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" id="pomo-goal-input" class="pomo-custom-input" min="1" max="20" value="8">
+          <span class="settings-label">помидоров</span>
+          <button class="pomo-custom-btn" onclick="const v=parseInt(document.getElementById('pomo-goal-input').value)||8; if(typeof pomodoro!=='undefined') pomodoro.setGoal(v)">Применить</button>
+        </div>
       </div>
 
       <!-- PWA установка -->
@@ -909,11 +1031,182 @@
     </div>
   </div>
 
+  <!-- ═══ СТРАНИЦА: ТАЙМЕР ═══ -->
+  <div class="page" id="page-timer">
+    <div class="page-header">
+      <h1 class="page-title">&#9201; Таймер</h1>
+      <p class="page-desc">Обратный таймер, секундомер и фоновые звуки для концентрации</p>
+    </div>
+    <div class="timer-page-layout">
+      <!-- Табы -->
+      <div class="timer-tabs">
+        <button class="timer-tab-btn active" data-tab="countdown">&#9197; Таймер</button>
+        <button class="timer-tab-btn" data-tab="stopwatch">&#9200; Секундомер</button>
+      </div>
+
+      <!-- Таб: Обратный таймер -->
+      <div class="timer-tab-content active" id="timer-tab-countdown">
+        <div class="timer-ring-wrap">
+          <svg class="timer-ring" viewBox="0 0 200 200">
+            <circle class="timer-ring-bg" cx="100" cy="100" r="88"/>
+            <circle class="timer-ring-fill" id="timer-ring-fill" cx="100" cy="100" r="88"
+              stroke-dasharray="553" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-center">
+            <div class="timer-big-display" id="timer-display">25:00</div>
+            <div class="timer-center-label">осталось</div>
+          </div>
+        </div>
+
+        <div class="timer-presets">
+          <button class="timer-preset" data-min="5">5 мин</button>
+          <button class="timer-preset" data-min="10">10 мин</button>
+          <button class="timer-preset" data-min="25">25 мин</button>
+          <button class="timer-preset" data-min="45">45 мин</button>
+          <button class="timer-preset" data-min="60">60 мин</button>
+        </div>
+
+        <div class="timer-custom-row">
+          <button class="timer-adj-btn" id="timer-sub-5">−5</button>
+          <input type="number" id="timerMinutes" class="timer-minutes-input" min="1" max="180" value="25">
+          <span class="timer-minutes-label">мин</span>
+          <button class="timer-adj-btn" id="timer-add-5">+5</button>
+        </div>
+
+        <div class="timer-controls">
+          <button class="timer-btn-main" id="timerStartBtn">&#9654; Старт</button>
+          <button class="timer-btn-reset" id="timerResetBtn">&#8635; Сброс</button>
+        </div>
+      </div>
+
+      <!-- Таб: Секундомер -->
+      <div class="timer-tab-content" id="timer-tab-stopwatch">
+        <div class="sw-display-wrap">
+          <div class="sw-big-display" id="sw-display">00:00.00</div>
+        </div>
+        <div class="timer-controls">
+          <button class="timer-btn-main" id="swStartBtn">&#9654; Старт</button>
+          <button class="timer-btn-reset" id="swLapBtn">&#9872; Круг</button>
+          <button class="timer-btn-secondary" id="swResetBtn">&#8635; Сброс</button>
+        </div>
+        <div class="sw-laps-wrap">
+          <div class="sw-laps-header">
+            <span>Отметка</span><span>Время круга</span><span>Общее</span>
+          </div>
+          <div class="sw-laps" id="sw-laps">
+            <div class="sw-no-laps">Нет отметок</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ambient звуки (общие для обоих табов) -->
+      <div class="timer-ambient-card">
+        <div class="card-title">&#127911; Фоновые звуки</div>
+        <div class="ambient-panel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ СТРАНИЦА: ЗАДАЧИ ═══ -->
+  <div class="page" id="page-tasks">
+    <div class="page-header">
+      <h1 class="page-title">&#9989; Задачи дня</h1>
+      <p class="page-desc">Список задач, оценка энергии и напоминания о разминке</p>
+    </div>
+    <div class="tasks-page-layout">
+      <!-- Левая колонка: задачи -->
+      <div class="tasks-main">
+        <div class="tasks-card">
+          <div class="card-title">&#128221; Задачи на сегодня</div>
+          <div class="task-add-row">
+            <input type="text" id="task-input" class="task-input" placeholder="Новая задача... (Enter для добавления)" maxlength="200">
+            <button class="task-add-btn" id="task-add-btn">+ Добавить</button>
+          </div>
+          <div class="task-progress-wrap">
+            <div class="task-progress-bar">
+              <div class="task-progress-fill" id="task-progress-fill" style="width:0%"></div>
+            </div>
+            <div class="task-progress-label" id="task-progress-label">0 / 0 задач выполнено</div>
+          </div>
+          <div class="task-list" id="task-list">
+            <div class="task-empty">Нет задач на сегодня. Добавьте первую!</div>
+          </div>
+          <div class="task-actions">
+            <button class="task-clear-btn" id="task-clear-done">&#128465; Очистить выполненные</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая колонка: энергия + напоминания -->
+      <div class="tasks-side">
+        <!-- Оценка энергии -->
+        <div class="tasks-card">
+          <div class="card-title">&#9889; Уровень энергии</div>
+          <div class="energy-stars" id="energy-stars">
+            <button class="energy-star" title="Истощён">&#9733;</button>
+            <button class="energy-star" title="Устал">&#9733;</button>
+            <button class="energy-star" title="Нормально">&#9733;</button>
+            <button class="energy-star" title="Хорошо">&#9733;</button>
+            <button class="energy-star" title="Отлично">&#9733;</button>
+          </div>
+          <div class="energy-label" id="energy-label">Оцените уровень энергии</div>
+          <div class="energy-hint">Обновляется каждый час. Помогает отслеживать продуктивность.</div>
+        </div>
+
+        <!-- Напоминание о разминке -->
+        <div class="tasks-card">
+          <div class="card-title">&#129336; Напоминание о разминке</div>
+          <p class="settings-hint">Уведомление появится через указанный интервал сидения за столом.</p>
+          <div class="stretch-row">
+            <span class="stretch-label">Интервал:</span>
+            <input type="number" id="stretch-interval-input" class="pomo-custom-input" min="10" max="180" value="60">
+            <span class="stretch-label">мин</span>
+          </div>
+          <div class="stretch-status" id="stretch-status">Напоминание активно</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- end .main -->
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Bottom Navigation (mobile only) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard'); updateBottomNav('dashboard')">
+    <span class="bottom-nav-icon">&#9783;</span>
+    <span>Dashboard</span>
+  </button>
+  <button class="bottom-nav-item" data-page="analytics" onclick="navigateTo('analytics'); updateBottomNav('analytics')">
+    <span class="bottom-nav-icon">&#128200;</span>
+    <span>Аналитика</span>
+  </button>
+  <button class="bottom-nav-item" data-page="pomodoro" onclick="navigateTo('pomodoro'); updateBottomNav('pomodoro')">
+    <span class="bottom-nav-icon">&#127813;</span>
+    <span>Pomodoro</span>
+  </button>
+  <button class="bottom-nav-item" data-page="tasks" onclick="navigateTo('tasks'); updateBottomNav('tasks')">
+    <span class="bottom-nav-icon">&#9989;</span>
+    <span>Задачи</span>
+  </button>
+  <button class="bottom-nav-item" data-page="settings" onclick="navigateTo('settings'); updateBottomNav('settings')">
+    <span class="bottom-nav-icon">&#9881;</span>
+    <span>Настройки</span>
+  </button>
+</nav>
+
+<script src="/static/js/config.js"></script>
+<script src="/static/js/state.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/wellness.js"></script>
+<script src="/static/js/sensors.js"></script>
+<script src="/static/js/analytics.js"></script>
+<script src="/static/js/pomodoro.js"></script>
+<script src="/static/js/timer.js"></script>
+<script src="/static/js/tasks.js"></script>
+<script src="/static/js/settings.js"></script>
 <script src="/static/js/app.js"></script>
 </body>
 </html>
