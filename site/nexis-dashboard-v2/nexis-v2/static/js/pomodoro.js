@@ -138,7 +138,12 @@ const pomodoro = (() => {
   function tick() {
     remaining--;
     updateDisplay();
-    if (remaining <= 0) onComplete();
+    if (remaining <= 0) {
+      if (typeof nexisSound !== 'undefined') nexisSound.tickFinal();
+      onComplete();
+    } else if (remaining <= 5 && !isBreak) {
+      if (typeof nexisSound !== 'undefined') nexisSound.tick();
+    }
   }
 
   function onComplete() {
@@ -152,6 +157,7 @@ const pomodoro = (() => {
       addEvent('work', { num: cyclesDone, duration: workMin, task: _boundTask ? _boundTask.text : null });
       logger.add('pomodoro', '🍅 Pomodoro #' + cyclesDone + ' завершён! (' + workMin + ' мин)' + (_boundTask ? ' — ' + _boundTask.text : ''));
       _boundTask = null; updateBoundTaskDisplay();
+      if (typeof nexisSound !== 'undefined') nexisSound.pomoComplete();
       toast.show('🍅 Pomodoro #' + cyclesDone + ' завершён! Перерыв ' + breakMin + ' минут.', 'success', 6000);
       if (typeof getNotifSetting === 'undefined' || getNotifSetting('pomoFinished')) {
         sendNotif('🍅 Pomodoro завершён!', 'Перерыв ' + breakMin + ' минут. Молодец!');
@@ -172,6 +178,7 @@ const pomodoro = (() => {
     } else {
       addEvent('break', { num: cyclesDone });
       logger.add('pomodoro', '☕ Перерыв завершён! Начинаем следующий цикл.');
+      if (typeof nexisSound !== 'undefined') nexisSound.breakComplete();
       toast.show('☕ Перерыв окончен! Готов к новому циклу.', 'info', 4000);
       sendNotif('☕ Перерыв окончен!', 'Начинаем следующие ' + workMin + ' минут работы.');
       addEvent('notif', { msg: 'Перерыв #' + cyclesDone + ' окончен' });
@@ -263,6 +270,12 @@ const pomodoro = (() => {
         updateBtnState();
         updateDisplay();
       } else if (!isBreak) {
+        // Умная проверка среды перед стартом
+        const envWarning = checkEnvBeforeStart();
+        if (envWarning) {
+          const ok = confirm('⚠️ Среда не оптимальна:\n' + envWarning + '\n\nВсё равно запустить Pomodoro?');
+          if (!ok) return;
+        }
         // B1: предложить выбрать задачу перед первым стартом цикла работы
         showTaskPicker(task => {
           _boundTask = task;
@@ -378,4 +391,16 @@ const pomodoro = (() => {
   };
 })();
 
+// Умная проверка среды перед стартом Pomodoro
+function checkEnvBeforeStart() {
+  if (typeof state === 'undefined' || !state.sensors) return null;
+  const s = state.sensors;
+  const issues = [];
+  if (s.co2   != null && s.co2   > 1000) issues.push('CO₂ ' + Math.round(s.co2) + ' ppm — проветрите помещение');
+  if (s.light != null && s.light < 200)  issues.push('Освещённость ' + Math.round(s.light) + ' lux — слишком темно');
+  if (s.noise != null && s.noise > 70)   issues.push('Шум ' + s.noise.toFixed(1) + ' dB — слишком громко');
+  if (s.temperature != null && (s.temperature < 17 || s.temperature > 28))
+    issues.push('Температура ' + s.temperature.toFixed(1) + '°C — некомфортно');
+  return issues.length ? issues.join('\n') : null;
+}
 window.pomodoro = pomodoro;

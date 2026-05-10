@@ -1,0 +1,115 @@
+<!-- ═══ СТРАНИЦА: POMODORO ═══ -->
+<div class="page" id="page-pomodoro">
+  <div class="page-header">
+    <h1 class="page-title">&#127813; Pomodoro Таймер</h1>
+    <p class="page-desc">Техника управления временем для максимальной продуктивности</p>
+  </div>
+  <div class="pomo-layout">
+    <div class="pomo-main">
+      <div class="pomo-ring-wrap">
+        <svg class="pomo-ring" viewBox="0 0 200 200">
+          <circle class="ring-bg" cx="100" cy="100" r="88"/>
+          <circle class="ring-fill" id="pomoRing" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="0"/>
+        </svg>
+        <div class="pomo-center">
+          <div class="pomo-big-time" id="pomoTime">25:00</div>
+          <div class="pomo-big-phase" id="pomoPhase">Работа</div>
+        </div>
+      </div>
+      <div class="pomo-controls">
+        <button class="pomo-btn-main" id="pomoBtn" onclick="pomodoro.toggle()">▶ Старт</button>
+        <button class="pomo-btn-reset" onclick="pomodoro.reset()">&#8635; Сброс</button>
+      </div>
+      <div class="pomo-dots-row" id="pomoDots"></div>
+      <div class="pomo-mode-row">
+        <button class="pomo-mode active" data-work="25" data-break="5" onclick="pomodoro.setMode(this)">25/5</button>
+        <button class="pomo-mode" data-work="50" data-break="10" onclick="pomodoro.setMode(this)">50/10</button>
+        <button class="pomo-mode" data-work="90" data-break="20" onclick="pomodoro.setMode(this)">90/20</button>
+      </div>
+      <div class="pomo-custom-row">
+        <span class="pomo-custom-label">Своё время:</span>
+        <input type="number" id="customWork" class="pomo-custom-input" min="1" max="120" value="25" title="Минуты работы">
+        <span class="pomo-custom-sep">мин /</span>
+        <input type="number" id="customBreak" class="pomo-custom-input" min="1" max="60" value="5" title="Минуты перерыва">
+        <span class="pomo-custom-sep">мин</span>
+        <button class="pomo-custom-btn" onclick="pomodoro.applyCustom()">Применить</button>
+      </div>
+      <div class="pomo-tracking-row">
+        <span class="pomo-tracking-label">&#128247; Режим отслеживания</span>
+        <div class="pomo-tracking-btns">
+          <button class="pomo-track-btn active" data-mode="free" onclick="pomodoro.setTrackingMode('free')" title="Таймер работает всегда">&#128221; Свободный</button>
+          <button class="pomo-track-btn" data-mode="computer" onclick="pomodoro.setTrackingMode('computer')" title="Авто-пауза если ушёл от стола (PIR)">&#128187; За компом</button>
+        </div>
+        <div class="pomo-tracking-hint" id="pomo-tracking-hint">Таймер идёт всегда, PIR не влияет</div>
+      </div>
+      <div class="pomo-task-picker" id="pomo-task-picker" style="display:none">
+        <div class="ptl-title">📌 Выберите задачу для этой сессии</div>
+        <div class="pomo-task-list" id="pomo-task-list"></div>
+        <button class="ptl-skip-btn" id="pomo-task-skip">Пропустить →</button>
+      </div>
+      <div class="pomo-bound-task" id="pomo-bound-task" style="display:none"></div>
+      <div class="pomo-goal-wrap">
+        <div class="pomo-goal-header">
+          <span class="pomo-goal-title">&#127919; Цель дня</span>
+          <span class="pomo-goal-count" id="pomo-goal-label">0 / 8 помидоров</span>
+        </div>
+        <div class="pomo-goal-bar"><div class="pomo-goal-fill" id="pomo-goal-fill" style="width:0%"></div></div>
+      </div>
+      <div class="deep-work-row">
+        <label class="deep-work-label">
+          <input type="checkbox" id="deepWorkCb" onchange="pomodoro.toggleDeepWork(this.checked)">
+          <span class="deep-work-text">&#9889; Deep Work — режим глубокой концентрации</span>
+        </label>
+        <div class="deep-work-indicator" id="deep-work-indicator" style="display:none">&#9679; Deep Work активен</div>
+      </div>
+    </div>
+    <div class="pomo-side">
+      <div class="pomo-info-card">
+        <div class="card-title">&#128200; Статистика сессии</div>
+        <div class="pomo-stats-list">
+          <div class="psl"><span>Циклов сегодня</span><b id="ps-today">0</b></div>
+          <div class="psl"><span>Минут фокуса</span><b id="ps-mins">0</b></div>
+          <div class="psl"><span>Текущий режим</span><b id="ps-mode">25/5</b></div>
+          <div class="psl"><span>Статус</span><b id="ps-status">Остановлен</b></div>
+          <div class="psl"><span>Отслеживание</span><b id="ps-tracking">📓 Свободный</b></div>
+        </div>
+      </div>
+      <div class="pomo-info-card">
+        <div class="card-title">&#128218; Техника Pomodoro</div>
+        <div class="pomo-desc">
+          <p>Метод управления временем, разработанный Франческо Чирилло в конце 1980-х. Работа разбивается на 25-минутные интервалы («помодоро»), разделённые короткими перерывами.</p>
+          <div class="pomo-steps">
+            <div class="ps-step"><span class="ps-num">1</span>Выбери задачу</div>
+            <div class="ps-step"><span class="ps-num">2</span>Работай 25 минут</div>
+            <div class="ps-step"><span class="ps-num">3</span>Перерыв 5 минут</div>
+            <div class="ps-step"><span class="ps-num">4</span>После 4 помодоро — длинный перерыв</div>
+          </div>
+        </div>
+      </div>
+      <div class="pomo-info-card">
+        <div class="card-title">&#9881; История сегодня</div>
+        <div class="pomo-history" id="pomoHistory"><div class="no-alerts">Пока нет циклов</div></div>
+      </div>
+      <div class="pomo-info-card">
+        <div class="card-title">&#9200; Лучшее время сегодня</div>
+        <div class="best-hours-wrap">
+          <div class="best-hours-time" id="best-hours-text">Накапливаются данные...</div>
+          <div class="best-hours-sub" id="best-hours-co2"></div>
+          <div class="best-hours-hint">Минимальный CO₂ → максимальная концентрация</div>
+        </div>
+      </div>
+      <div class="pomo-info-card">
+        <div class="card-title">&#127919; Продуктивность дня</div>
+        <div class="productivity-score-wrap">
+          <div class="productivity-score-val" id="productivity-score">--</div>
+          <div class="productivity-score-max">/100</div>
+        </div>
+        <div class="productivity-score-label" id="productivity-score-label">Вычисляется...</div>
+      </div>
+      <div class="pomo-info-card pomo-week-card">
+        <div class="card-title">&#128197; Pomodoro за неделю</div>
+        <div class="pomo-week-chart-wrap"><canvas id="weeklyPomodoroChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>

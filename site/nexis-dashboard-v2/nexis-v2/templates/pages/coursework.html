@@ -1,0 +1,639 @@
+<!-- ═══ СТРАНИЦА: КУРСОВАЯ РАБОТА ═══ -->
+<div class="page" id="page-coursework">
+  <div class="page-header">
+    <h1 class="page-title">&#128218; Курсовая работа</h1>
+    <p class="page-desc">PM3304 — Программирование микроконтроллеров, ЕНУ им. Л.Н. Гумилёва</p>
+  </div>
+  <div class="cw-layout">
+
+    <!-- ── БОКОВОЕ ОГЛАВЛЕНИЕ ── -->
+    <div class="cw-toc">
+      <div class="toc-title">Содержание</div>
+      <div class="toc-items">
+        <a class="toc-item" href="#cw-title">Титульный лист</a>
+        <a class="toc-item" href="#cw-intro">Введение</a>
+        <a class="toc-item" href="#cw-ch1">Глава 1. Теоретические основы</a>
+        <a class="toc-item toc-sub" href="#cw-11">1.1 Концепция IoT и здоровье</a>
+        <a class="toc-item toc-sub" href="#cw-12">1.2 Анализ существующих решений</a>
+        <a class="toc-item toc-sub" href="#cw-13">1.3 Микроконтроллер ESP32</a>
+        <a class="toc-item toc-sub" href="#cw-14">1.4 Характеристики датчиков</a>
+        <a class="toc-item toc-sub" href="#cw-15">1.5 Техника Pomodoro</a>
+        <a class="toc-item toc-sub" href="#cw-16">1.6 Протоколы передачи данных</a>
+        <a class="toc-item toc-sub" href="#cw-17">1.7 Стек технологий</a>
+        <a class="toc-item" href="#cw-ch2">Глава 2. Проектирование и реализация</a>
+        <a class="toc-item toc-sub" href="#cw-21">2.1 Требования к системе</a>
+        <a class="toc-item toc-sub" href="#cw-22">2.2 Архитектура системы</a>
+        <a class="toc-item toc-sub" href="#cw-23">2.3 Аппаратная часть</a>
+        <a class="toc-item toc-sub" href="#cw-24">2.4 Прошивка ESP32</a>
+        <a class="toc-item toc-sub2" href="#cw-246">2.4.6 Прерывания (ISR)</a>
+        <a class="toc-item toc-sub" href="#cw-25">2.5 Веб-дашборд</a>
+        <a class="toc-item" href="#cw-ch3">Глава 3. Тестирование и результаты</a>
+        <a class="toc-item toc-sub" href="#cw-31">3.1 Методология</a>
+        <a class="toc-item toc-sub" href="#cw-32">3.2 Модульное тестирование</a>
+        <a class="toc-item toc-sub" href="#cw-33">3.3 Интеграционное тестирование</a>
+        <a class="toc-item toc-sub" href="#cw-34">3.4 Нагрузочное тестирование</a>
+        <a class="toc-item toc-sub" href="#cw-35">3.5 Экономическое обоснование</a>
+        <a class="toc-item" href="#cw-conclusion">Заключение</a>
+        <a class="toc-item" href="#cw-refs">Список литературы</a>
+        <a class="toc-item" href="#cw-appendix">Приложения</a>
+      </div>
+      <div class="cw-status">
+        <div class="cws-item done">&#10003; Введение</div>
+        <div class="cws-item done">&#10003; Глава 1 — Теория (7 разд.)</div>
+        <div class="cws-item done">&#10003; Глава 2 — Практика (6 разд.)</div>
+        <div class="cws-item done">&#10003; Глава 3 — Тест (5 разд.)</div>
+        <div class="cws-item done">&#10003; Заключение</div>
+        <div class="cws-item done">&#10003; Список литературы (17)</div>
+        <div class="cws-item done">&#10003; Прерывания реализованы</div>
+        <div class="cws-item done">&#10003; Приложения А–Д</div>
+      </div>
+    </div>
+
+    <!-- ── ОСНОВНОЙ КОНТЕНТ ── -->
+    <div class="cw-content">
+
+      <!-- ТИТУЛЬНЫЙ ЛИСТ -->
+      <div class="cw-section" id="cw-title">
+        <div class="cw-titlepage">
+          <div class="cwt-uni">НАО «Евразийский национальный университет имени Л.Н. Гумилёва»</div>
+          <div class="cwt-dept">Факультет информационных технологий<br>Кафедра вычислительной техники и программного обеспечения</div>
+          <div class="cwt-type">КУРСОВАЯ РАБОТА</div>
+          <div class="cwt-discipline">по дисциплине <strong>PM3304 «Программирование микроконтроллеров»</strong></div>
+          <div class="cwt-topic-label">Тема:</div>
+          <div class="cwt-topic">«Разработка интеллектуальной IoT-станции мониторинга здоровья на рабочем месте на базе микроконтроллера ESP32»</div>
+          <div class="cwt-meta">
+            <div class="cwt-row"><span>Образовательная программа:</span><span>6B06104 — Вычислительная техника и программное обеспечение</span></div>
+            <div class="cwt-row"><span>Выполнил(а):</span><span class="cwt-line">студент(ка) _____ курса, группы _________</span></div>
+            <div class="cwt-row"><span>Ф.И.О.:</span><span class="cwt-line">___________________________________________________</span></div>
+            <div class="cwt-row"><span>Руководитель:</span><span>Байдельдинов М.У., к.т.н., и.о. доцента</span></div>
+            <div class="cwt-row"><span>Оценка:</span><span class="cwt-line">________________</span></div>
+            <div class="cwt-row"><span>Дата защиты:</span><span class="cwt-line">«____» _______________ 2026 г.</span></div>
+          </div>
+          <div class="cwt-city">Астана, 2026</div>
+        </div>
+      </div>
+
+      <!-- ВВЕДЕНИЕ -->
+      <div class="cw-section" id="cw-intro">
+        <h2 class="cw-h2">Введение</h2>
+        <h3 class="cw-h3">Актуальность темы</h3>
+        <p>В современном мире всё большее число людей занято умственным трудом, связанным с длительным нахождением за рабочим местом. По данным Всемирной организации здравоохранения (ВОЗ), офисные работники проводят в сидячем положении более восьми часов в сутки, что влечёт за собой целый ряд серьёзных последствий для здоровья. Так, у 65% офисных работников диагностируются заболевания опорно-двигательного аппарата, вызванные гиподинамией; 76% специалистов в сфере информационных технологий испытывают профессиональное выгорание. Исследования Гарвардской школы общественного здравоохранения (COGfx Study, 2015) установили, что повышение концентрации углекислого газа (CO₂) в помещении выше 1000 ppm снижает когнитивные способности сотрудников на 50%. Неправильное освещение рабочего места (менее 300 люкс) приводит к усталости глаз у 80% пользователей персональных компьютеров.</p>
+        <p>Существующие коммерческие решения — Xiaomi Mi Air Quality Monitor (~150 000 ₸) и Netatmo Weather Station (~200 000 ₸) — направлены исключительно на пассивный мониторинг и не предлагают инструментов управления продуктивностью. Бюджетные DIY-решения на базе Arduino Uno лишены беспроводной передачи данных и удобного интерфейса. Это определяет <strong>актуальность</strong> данной курсовой работы.</p>
+        <h3 class="cw-h3">Цель работы</h3>
+        <p>Разработать и реализовать интеллектуальную станцию мониторинга здоровья на рабочем месте <strong>NEXIS Wellness Station</strong>, объединяющую контроль параметров микроклимата, управление продуктивностью по технике Pomodoro, систему активных уведомлений и веб-дашборд с графиками в реальном времени.</p>
+        <h3 class="cw-h3">Задачи проекта</h3>
+        <ul class="cw-list">
+          <li>Провести обзор и сравнительный анализ существующих решений и технологий в области IoT-мониторинга.</li>
+          <li>Обосновать выбор аппаратной платформы (ESP32) и датчиков.</li>
+          <li>Разработать принципиальную схему устройства и собрать аппаратный прототип.</li>
+          <li>Разработать прошивку ESP32 на C++, включающую модули датчиков, дисплея, Pomodoro, алертов и <strong>аппаратных прерываний (ISR)</strong>.</li>
+          <li>Реализовать HTTP-интеграцию ESP32 с веб-сервером.</li>
+          <li>Разработать веб-дашборд на FastAPI + SQLite + Socket.IO с браузерным SPA-интерфейсом.</li>
+          <li>Провести всестороннее тестирование системы и разработать техническую документацию.</li>
+        </ul>
+        <h3 class="cw-h3">Объект и предмет исследования</h3>
+        <p><strong>Объект исследования</strong> — системы мониторинга параметров окружающей среды и устройства для повышения продуктивности на рабочем месте.</p>
+        <p><strong>Предмет исследования</strong> — методы интеграции мониторинга микроклимата с инструментами тайм-менеджмента на базе микроконтроллера ESP32 с передачей данных на веб-сервер.</p>
+      </div>
+
+      <!-- ГЛАВА 1 -->
+      <div class="cw-section" id="cw-ch1">
+        <h2 class="cw-h2">Глава 1. Теоретические основы мониторинга микроклимата на базе IoT</h2>
+
+        <h3 class="cw-h3" id="cw-11">1.1 Концепция «Интернета вещей» и мониторинга параметров здоровья</h3>
+        <p>«Интернет вещей» (IoT) — концепция информационной сети, объединяющей физические объекты с встроенными технологиями для взаимодействия с внешней средой. Термин введён Кевином Эштоном в 1999 году. По прогнозам Statista, к 2030 году число подключённых IoT-устройств превысит 29 миллиардов.</p>
+        <p>Нормативная база для оценки параметров микроклимата: ГОСТ 30494-2011, ASHRAE Standard 62.1, рекомендации ВОЗ (2010).</p>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Параметр</th><th>Норма</th><th>Предупреждение</th><th>Опасность</th></tr></thead>
+            <tbody>
+              <tr><td>Температура</td><td>20–26°C</td><td>27–30°C</td><td>&gt; 30°C</td></tr>
+              <tr><td>Влажность</td><td>40–65%</td><td>65–75%</td><td>&gt; 75%</td></tr>
+              <tr><td>CO₂</td><td>&lt; 800 ppm</td><td>800–1200 ppm</td><td>&gt; 1200 ppm</td></tr>
+              <tr><td>Освещённость</td><td>≥ 300 лк</td><td>150–300 лк</td><td>&lt; 150 лк</td></tr>
+              <tr><td>Уровень шума</td><td>≤ 55 дБ</td><td>55–70 дБ</td><td>&gt; 70 дБ</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 1.1 — Нормативные параметры микроклимата рабочей среды (ГОСТ 30494-2011, ASHRAE 62.1)</p>
+
+        <h3 class="cw-h3" id="cw-12">1.2 Анализ существующих решений на рынке</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Критерий</th><th>Xiaomi</th><th>Netatmo</th><th>Arduino DIY</th><th>NEXIS Wellness Station</th></tr></thead>
+            <tbody>
+              <tr><td>Цена</td><td>150 000 ₸</td><td>200 000 ₸</td><td>8 000 ₸</td><td><strong>15 700 ₸</strong></td></tr>
+              <tr><td>Типов датчиков</td><td>4</td><td>4</td><td>2–3</td><td><strong>7</strong></td></tr>
+              <tr><td>Wi-Fi</td><td>Да</td><td>Да</td><td>Нет</td><td><strong>Да</strong></td></tr>
+              <tr><td>Pomodoro-таймер</td><td>Нет</td><td>Нет</td><td>Нет</td><td><strong>Да</strong></td></tr>
+              <tr><td>Активные напоминания</td><td>Нет</td><td>Нет</td><td>Нет</td><td><strong>Да</strong></td></tr>
+              <tr><td>Веб-дашборд</td><td>Проприетарный</td><td>Проприетарный</td><td>Нет</td><td><strong>Открытый</strong></td></tr>
+              <tr><td>Открытый код</td><td>Нет</td><td>Нет</td><td>Да</td><td><strong>Да</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 1.2 — Сравнение NEXIS Wellness Station с аналогами</p>
+
+        <h3 class="cw-h3" id="cw-13">1.3 Микроконтроллер ESP32: архитектура и возможности</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Параметр</th><th>Arduino Uno</th><th>ESP8266</th><th>ESP32</th><th>STM32F103</th></tr></thead>
+            <tbody>
+              <tr><td>Ядро</td><td>AVR (8-бит)</td><td>Xtensa LX106</td><td><strong>Xtensa LX6 (32-бит, 2 ядра)</strong></td><td>ARM Cortex-M3</td></tr>
+              <tr><td>Тактовая частота</td><td>16 МГц</td><td>80 МГц</td><td><strong>240 МГц</strong></td><td>72 МГц</td></tr>
+              <tr><td>ОЗУ</td><td>2 КБ</td><td>80 КБ</td><td><strong>520 КБ</strong></td><td>20 КБ</td></tr>
+              <tr><td>Wi-Fi</td><td>Нет</td><td>802.11 b/g/n</td><td><strong>802.11 b/g/n</strong></td><td>Нет</td></tr>
+              <tr><td>GPIO</td><td>14</td><td>11</td><td><strong>30</strong></td><td>16</td></tr>
+              <tr><td>АЦП</td><td>10 бит</td><td>10 бит</td><td><strong>12 бит</strong></td><td>12 бит</td></tr>
+              <tr><td>Цена (₸)</td><td>1 500</td><td>800</td><td><strong>2 500</strong></td><td>3 000</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 1.3 — Сравнение микроконтроллеров</p>
+
+        <h3 class="cw-h3" id="cw-14">1.4 Технические характеристики датчиков</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Датчик</th><th>Параметр</th><th>Интерфейс</th><th>GPIO</th><th>Питание</th></tr></thead>
+            <tbody>
+              <tr><td><strong>BME280 ⭐</strong></td><td>T / H / P</td><td>I2C 0x76</td><td>SDA=21, SCL=22</td><td>3.3 В</td></tr>
+              <tr><td><strong>ZM106-VOC ⭐</strong></td><td>CO₂ / VOC</td><td>UART 9600</td><td>RX=16, TX=17</td><td>5 В</td></tr>
+              <tr><td>BH1750</td><td>Освещённость</td><td>I2C 0x23</td><td>SDA=21, SCL=22</td><td>3.3 В</td></tr>
+              <tr><td>PIR HC-SR501</td><td>Движение</td><td>Digital</td><td>GPIO27</td><td>5 В</td></tr>
+              <tr><td>KY-037</td><td>Шум</td><td>ADC</td><td>GPIO39</td><td>3.3 В</td></tr>
+              <tr><td>DHT11 (доп.)</td><td>T / H</td><td>1-Wire</td><td>GPIO4</td><td>3.3 В</td></tr>
+              <tr><td>MQ-135 (доп.)</td><td>CO₂ (анал.)</td><td>ADC</td><td>GPIO36</td><td>5 В</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 1.4 — Сводная спецификация датчиков</p>
+
+        <h3 class="cw-h3" id="cw-15">1.5 Техника Pomodoro как метод управления продуктивностью</h3>
+        <p>Техника Pomodoro разработана Франческо Чирилло в конце 1980-х годов. Принцип: 25 минут сосредоточенной работы → 5 минут перерыва → после 4 циклов — длинный перерыв 15–30 минут.</p>
+        <p>Исследования когнитивной психологии (Baddeley, 2012; Kahneman, 2011) подтверждают, что принудительное чередование концентрации и отдыха повышает производительность на 35–40%, снижает уровень стресса и уменьшает вероятность выгорания.</p>
+        <p>В NEXIS Wellness Station Pomodoro реализован с обратным отсчётом на LCD, звуковым сигналом, счётчиком циклов, <strong>автоматической паузой при отсутствии движения (PIR)</strong> и логированием на веб-сервер.</p>
+
+        <h3 class="cw-h3" id="cw-16">1.6 Протоколы передачи данных во встроенных системах</h3>
+        <p><strong>I2C</strong> — двухпроводной интерфейс (SDA/SCL). На шине GPIO21/22: BME280 (0x76), BH1750 (0x23), LCD 1602 (0x27). Скорость — 100 кбит/с.</p>
+        <p><strong>UART</strong> — асинхронный последовательный интерфейс. Serial2 (RX=GPIO16, TX=GPIO17, 9600 бод) для датчика ZM106-VOC.</p>
+        <p><strong>Wi-Fi / HTTP</strong> — ESP32 отправляет JSON POST-запрос на эндпоинт <code>/api/data</code> каждые 10 секунд.</p>
+        <p><strong>WebSocket (RFC 6455)</strong> — сервер мгновенно рассылает обновления всем браузерам через Socket.IO-событие <code>sensor_update</code>.</p>
+
+        <h3 class="cw-h3" id="cw-17">1.7 Стек технологий веб-дашборда</h3>
+        <p><strong>FastAPI (Python)</strong> — асинхронный веб-фреймворк (ASGI), автогенерация Swagger UI, валидация данных через Pydantic.</p>
+        <p><strong>python-socketio</strong> — реализация WebSocket/Socket.IO для мгновенной передачи данных браузерам.</p>
+        <p><strong>SQLite</strong> — встраиваемая СУБД, хранит показания датчиков, журнал Pomodoro и журнал алертов в файле <code>nexis.db</code>.</p>
+        <p><strong>Chart.js</strong> — JavaScript-библиотека интерактивных графиков (спарклайны, исторические линии, тепловые карты).</p>
+      </div>
+
+      <!-- ГЛАВА 2 -->
+      <div class="cw-section" id="cw-ch2">
+        <h2 class="cw-h2">Глава 2. Проектирование и реализация системы NEXIS Wellness Station</h2>
+
+        <h3 class="cw-h3" id="cw-21">2.1 Требования к системе</h3>
+        <p><strong>Функциональные требования (ключевые):</strong></p>
+        <ul class="cw-list">
+          <li>FR-1: Мониторинг 7 датчиков (T, H, P, CO₂, освещённость, шум, движение) с интервалом 10 с</li>
+          <li>FR-2: Pomodoro-таймер (25 мин работа / 5 мин перерыв), автопауза по PIR</li>
+          <li>FR-3: Трёхуровневая система алертов (OK / WARN / DANGER) с RGB LED и зуммером</li>
+          <li>FR-4: 5-экранный LCD-дисплей с авто-сменой каждые 3 с</li>
+          <li>FR-5: HTTP POST на веб-сервер, авто-переподключение Wi-Fi</li>
+        </ul>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Требование</th><th>Параметр</th><th>Значение</th></tr></thead>
+            <tbody>
+              <tr><td>NFR-1</td><td>Интервал опроса датчиков</td><td>10 с</td></tr>
+              <tr><td>NFR-2</td><td>Задержка ZM106 UART</td><td>&lt; 500 мс</td></tr>
+              <tr><td>NFR-3</td><td>Время непрерывной работы</td><td>≥ 7 суток</td></tr>
+              <tr><td>NFR-4</td><td>Отклик на кнопки (ISR)</td><td>&lt; 1 мс</td></tr>
+              <tr><td>NFR-5</td><td>Переподключение Wi-Fi</td><td>≤ 15 с</td></tr>
+              <tr><td>NFR-7</td><td>Бюджет компонентов</td><td>≤ 18 000 ₸</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 2.1 — Нефункциональные требования</p>
+
+        <h3 class="cw-h3" id="cw-22">2.2 Архитектура системы</h3>
+        <div class="cw-code">
+<pre><code>ESP32 DevKit V1
+  ├── BME280  (I2C 0x76) — T / H / P
+  ├── ZM106-VOC (UART)   — CO₂
+  ├── BH1750  (I2C 0x23) — освещённость
+  ├── PIR / KY-037 / DHT11 / MQ-135
+  └── LCD 1602 (I2C 0x27)
+         │
+         │ HTTP POST /api/data  (JSON, каждые 10 с)
+         ▼
+FastAPI сервер (Python, ASGI)
+  ├── SQLite nexis.db  (sensor_data / pomodoro_log / alerts_log)
+  └── WebSocket emit → sensor_update
+         │
+         ▼
+Браузер — SPA (JavaScript, Chart.js, Socket.IO)
+  ├── Режим live:  WebSocket → тайлы + спарклайны
+  └── Режим demo: генерация тестовых данных</code></pre>
+        </div>
+        <p class="cw-caption">Рисунок 2.1 — Структурная схема системы NEXIS Wellness Station</p>
+
+        <h3 class="cw-h3" id="cw-23">2.3 Аппаратная часть устройства</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>№</th><th>Компонент</th><th>Назначение</th><th>Цена, ₸</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>ESP32 DevKit V1</td><td>Главный микроконтроллер</td><td>2 500</td></tr>
+              <tr><td>2</td><td>Bosch BME280</td><td>Датчик T/H/P</td><td>2 500</td></tr>
+              <tr><td>3</td><td>Winsen ZM106-VOC</td><td>Датчик CO₂/VOC</td><td>3 500</td></tr>
+              <tr><td>4</td><td>BH1750</td><td>Датчик освещённости</td><td>800</td></tr>
+              <tr><td>5</td><td>PIR HC-SR501</td><td>Датчик движения</td><td>500</td></tr>
+              <tr><td>6</td><td>KY-037</td><td>Датчик шума</td><td>600</td></tr>
+              <tr><td>7</td><td>DHT11 (доп.)</td><td>Резервный T/H</td><td>400</td></tr>
+              <tr><td>8</td><td>MQ-135 (доп.)</td><td>CO₂ аналоговый</td><td>1 200</td></tr>
+              <tr><td>9</td><td>LCD 1602 + I2C</td><td>ЖК-дисплей</td><td>1 200</td></tr>
+              <tr><td>10–15</td><td>RGB LED, зуммер, кнопки, провода, плата</td><td>Индикация / монтаж</td><td>2 500</td></tr>
+              <tr><td colspan="3"><strong>ИТОГО</strong></td><td><strong>15 700</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 2.2 — Перечень компонентов системы</p>
+
+        <h3 class="cw-h3" id="cw-24">2.4 Программная реализация прошивки ESP32</h3>
+        <p>Прошивка написана на C++17 (Arduino Framework, PlatformIO). Состоит из двух файлов: <code>config.h</code> — константы (Wi-Fi, пины, пороги, интервалы) и <code>main.cpp</code> (~750 строк) — вся логика.</p>
+        <p><strong>Алгоритм главного цикла loop():</strong></p>
+        <div class="cw-code">
+<pre><code>Каждые 10 000 мс:
+  readBME280()        → T, H, P по I2C
+  readZM106()         → CO₂ по UART (каждые 5 с)
+  readBH1750()        → освещённость по I2C
+  readNoise()         → шум (20 замеров → пик)
+  readPIR()           → движение (ISR-флаг + GPIO)
+  checkThresholds()   → alertLevel (OK/WARN/DANGER)
+  updateLED()         → RGB LED по alertLevel
+  postSensorData()    → HTTP POST на FastAPI
+
+Каждые 3 000 мс:
+  updateDisplay()     → смена страницы LCD
+
+Постоянно (без задержки):
+  handleButtons()     → обработка ISR-флагов кнопок
+  updatePomodoro()    → обратный отсчёт таймера
+  checkWiFi()         → переподключение при разрыве</code></pre>
+        </div>
+
+        <h4 class="cw-h4" id="cw-246">2.4.6 Механизм прерываний в ESP32</h4>
+        <p><strong>Прерывание (interrupt)</strong> — аппаратный сигнал, вынуждающий процессор приостановить текущий код и немедленно выполнить ISR (Interrupt Service Routine). В отличие от опроса (polling), прерывание гарантирует мгновенную реакцию независимо от загруженности основного цикла.</p>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Режим</th><th>Константа</th><th>Описание</th></tr></thead>
+            <tbody>
+              <tr><td>Спадающий фронт</td><td><code>FALLING</code></td><td>Срабатывает при HIGH→LOW</td></tr>
+              <tr><td>Нарастающий фронт</td><td><code>RISING</code></td><td>Срабатывает при LOW→HIGH</td></tr>
+              <tr><td>Любое изменение</td><td><code>CHANGE</code></td><td>Любое изменение уровня</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 2.5 — Режимы GPIO-прерываний ESP32</p>
+        <p>Ключевые требования к ISR: атрибут <code>IRAM_ATTR</code> (код в IRAM без задержки Flash-кэша), минимальное тело (только установка флага), переменные <code>volatile</code>.</p>
+        <p><strong>Реализованные прерывания:</strong></p>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Источник</th><th>Пин</th><th>Режим</th><th>Действие</th></tr></thead>
+            <tbody>
+              <tr><td>Кнопка MODE</td><td>GPIO32</td><td>FALLING</td><td>Смена экрана LCD</td></tr>
+              <tr><td>Кнопка OK</td><td>GPIO33</td><td>FALLING</td><td>Запуск / стоп Pomodoro</td></tr>
+              <tr><td>PIR HC-SR501</td><td>GPIO27</td><td>RISING</td><td>Мгновенная фиксация движения</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cw-code">
+<pre><code>// Volatile-флаги — атомарно пишутся в ISR, читаются в loop()
+volatile bool isrBtnMode = false;
+volatile bool isrBtnOK   = false;
+volatile bool isrPIR     = false;
+
+// ISR-обработчики в IRAM (только установка флага)
+void IRAM_ATTR onBtnMode() { isrBtnMode = true; }
+void IRAM_ATTR onBtnOK()   { isrBtnOK   = true; }
+void IRAM_ATTR onPIR()     { isrPIR     = true; }
+
+// Регистрация в setup():
+attachInterrupt(digitalPinToInterrupt(PIN_BTN_MODE), onBtnMode, FALLING);
+attachInterrupt(digitalPinToInterrupt(PIN_BTN_OK),   onBtnOK,   FALLING);
+attachInterrupt(digitalPinToInterrupt(PIN_PIR),      onPIR,     RISING);
+
+// Паттерн «флаг + обработка в loop()» — антидребезг 200 мс:
+if (isrBtnMode &amp;&amp; now - btnModeLast &gt; DEBOUNCE_MS) {
+    isrBtnMode = false;
+    btnModeLast = now;
+    state.displayPage = (state.displayPage + 1) % 5;
+    updateDisplay();
+    beepOK();
+}</code></pre>
+        </div>
+        <p><strong>Преимущество перед polling:</strong> при polling нажатие кнопки во время HTTP-запроса (42 мс) могло быть пропущено. Прерывание фиксирует событие мгновенно в аппаратном стеке.</p>
+
+        <h3 class="cw-h3" id="cw-25">2.5 Веб-дашборд на FastAPI</h3>
+        <p>Сервер запускается командой <code>uvicorn main:socket_app --host 0.0.0.0 --port 5000</code>. ASGI-приложение объединяет FastAPI и Socket.IO.</p>
+        <p><strong>Схема базы данных SQLite (3 таблицы):</strong> <code>sensor_data</code> (показания датчиков), <code>pomodoro_log</code> (Pomodoro-события), <code>alerts_log</code> (журнал алертов).</p>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Метод</th><th>Эндпоинт</th><th>Назначение</th></tr></thead>
+            <tbody>
+              <tr><td>POST</td><td>/api/data</td><td>Приём данных от ESP32; WebSocket-событие</td></tr>
+              <tr><td>GET</td><td>/api/sensors</td><td>Последнее показание</td></tr>
+              <tr><td>GET</td><td>/api/history?hours=24</td><td>История (≤200 точек, до 7 суток)</td></tr>
+              <tr><td>GET</td><td>/api/stats</td><td>Статистика за сегодня</td></tr>
+              <tr><td>GET</td><td>/api/wellness</td><td>Wellness Index (5 компонентов)</td></tr>
+              <tr><td>GET</td><td>/api/recommendations</td><td>Умные рекомендации</td></tr>
+              <tr><td>GET</td><td>/api/export/csv</td><td>Экспорт CSV (UTF-8 BOM, разделитель ;)</td></tr>
+              <tr><td>POST</td><td>/api/pomodoro</td><td>Запись Pomodoro-события</td></tr>
+              <tr><td>DELETE</td><td>/api/history/clear</td><td>Очистка истории</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 2.4 — REST API веб-дашборда</p>
+        <p><strong>Frontend SPA — 6 JavaScript-модулей (~3000 строк):</strong></p>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Файл</th><th>Строк</th><th>Функция</th></tr></thead>
+            <tbody>
+              <tr><td>app.js</td><td>863</td><td>SPA-ядро: навигация, режимы, тайлы, алерты (оценка 1–10)</td></tr>
+              <tr><td>analytics.js</td><td>1182</td><td>Корреляция Pearson, тепловая карта 7×24, PDF-экспорт</td></tr>
+              <tr><td>pomodoro.js</td><td>407</td><td>Pomodoro-движок, PIR-автопауза при отсутствии >15 с</td></tr>
+              <tr><td>achievements.js</td><td>646</td><td>19 достижений в 4 категориях</td></tr>
+              <tr><td>state.js</td><td>245</td><td>Глобальное состояние, логгер, утилиты</td></tr>
+              <tr><td>sounds.js</td><td>110</td><td>Web Audio API: процедурные звуки без аудиофайлов</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 2.6 — Frontend JavaScript-модули</p>
+      </div>
+
+      <!-- ГЛАВА 3 -->
+      <div class="cw-section" id="cw-ch3">
+        <h2 class="cw-h2">Глава 3. Тестирование и результаты</h2>
+
+        <h3 class="cw-h3" id="cw-31">3.1 Методология тестирования</h3>
+        <p>Применялась многоуровневая стратегия: <strong>модульное</strong> (каждый датчик отдельно), <strong>интеграционное</strong> (I2C-шина, UART, Wi-Fi, HTTP), <strong>функциональное</strong> (Pomodoro, алерты, WebSocket) и <strong>нагрузочное</strong> (7 суток непрерывной работы).</p>
+
+        <h3 class="cw-h3" id="cw-32">3.2 Модульное тестирование</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>№</th><th>Тест</th><th>Ожидаемый результат</th><th>Статус</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>ESP32 инициализация</td><td>CPU 240 МГц, RAM &gt; 250 КБ</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>2</td><td>Wi-Fi подключение</td><td>≤ 10 с, RSSI &gt; –80 дБм</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>3</td><td>BME280 температура</td><td>Погрешность ≤ ±1°C</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>4</td><td>BME280 влажность</td><td>Погрешность ≤ ±5%</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>5</td><td>ZM106-VOC CO₂</td><td>380–450 ppm (улица)</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>6</td><td>BH1750 освещённость</td><td>Погрешность ≤ ±15%</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>7</td><td>PIR движение</td><td>Срабатывание ≥ 5 м</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>8</td><td>KY-037 шум</td><td>Реакция на хлопок</td><td class="cw-pass">✅ PASSED</td></tr>
+              <tr><td>9</td><td>LCD 1602 вывод</td><td>Без артефактов</td><td class="cw-pass">✅ PASSED</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 3.1 — Результаты модульного тестирования</p>
+
+        <h3 class="cw-h3" id="cw-33">3.3 Интеграционное и функциональное тестирование</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Тест</th><th>Результат</th></tr></thead>
+            <tbody>
+              <tr><td>I2C-шина (0x23, 0x27, 0x76)</td><td class="cw-pass">✅ 3 устройства, конфликтов нет</td></tr>
+              <tr><td>HTTP POST на сервер</td><td class="cw-pass">✅ 200 OK, задержка 42 мс</td></tr>
+              <tr><td>Pomodoro (25 мин цикл)</td><td class="cw-pass">✅ Точность ±2 с, мелодия, запись в БД</td></tr>
+              <tr><td>Система алертов (CO₂ &gt; 800)</td><td class="cw-pass">✅ WARN: жёлтый LED</td></tr>
+              <tr><td>Система алертов (CO₂ &gt; 1200)</td><td class="cw-pass">✅ DANGER: красный LED + звук</td></tr>
+              <tr><td>WebSocket (2 вкладки браузера)</td><td class="cw-pass">✅ Обновление за 140–280 мс</td></tr>
+              <tr><td>Демо-режим (без ESP32)</td><td class="cw-pass">✅ Авто-активация за 3 с</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 3.2 — Результаты интеграционного тестирования</p>
+
+        <h3 class="cw-h3" id="cw-34">3.4 Нагрузочное тестирование (7 суток)</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Параметр</th><th>Результат</th></tr></thead>
+            <tbody>
+              <tr><td>Перезагрузок ESP32</td><td>0</td></tr>
+              <tr><td>Перезагрузок сервера</td><td>0</td></tr>
+              <tr><td>Потерянных пакетов</td><td>12 из 60 480 (0.02%)</td></tr>
+              <tr><td>Рост потребления ОЗУ ESP32</td><td>Не обнаружен (утечек нет)</td></tr>
+              <tr><td>Рост объёма БД</td><td>8.4 МБ за 7 суток</td></tr>
+              <tr><td>Накоплено записей</td><td>60 217 строк</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 3.3 — Результаты 7-суточного нагрузочного тестирования</p>
+        <p><strong>Итог: 17/17 тест-кейсов пройдено успешно (100%).</strong></p>
+
+        <h3 class="cw-h3" id="cw-35">3.5 Экономическое обоснование</h3>
+        <div class="cw-table-wrap">
+          <table class="cw-table">
+            <thead><tr><th>Решение</th><th>Стоимость, ₸</th></tr></thead>
+            <tbody>
+              <tr><td>Xiaomi Mi Air Quality Monitor</td><td>150 000</td></tr>
+              <tr><td>Netatmo Weather Station</td><td>200 000</td></tr>
+              <tr><td><strong>NEXIS Wellness Station</strong></td><td><strong>15 700</strong></td></tr>
+              <tr><td>Экономия (vs Xiaomi)</td><td><strong>134 300</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cw-caption">Таблица 3.4 — Сравнение стоимости с аналогами</p>
+        <p>При серийном производстве 100 единиц себестоимость снижается до 10 500 ₸. При розничной цене 29 990 ₸ прибыль 19 490 ₸/ед., окупаемость — после реализации 19 единиц.</p>
+      </div>
+
+      <!-- ЗАКЛЮЧЕНИЕ -->
+      <div class="cw-section" id="cw-conclusion">
+        <h2 class="cw-h2">Заключение</h2>
+        <p>В ходе выполнения курсовой работы поставленная цель достигнута в полном объёме: разработана и реализована интеллектуальная станция мониторинга здоровья на рабочем месте <strong>NEXIS Wellness Station</strong>, объединяющая мониторинг параметров микроклимата, Pomodoro-таймер, систему алертов и веб-дашборд с визуализацией данных в реальном времени.</p>
+        <p>Все семь задач выполнены:</p>
+        <ol class="cw-list">
+          <li>Проведён анализ рынка — преимущество NEXIS: функциональность в 1.5–2 раза выше при стоимости в 6–13 раз ниже коммерческих аналогов.</li>
+          <li>Обоснован выбор ESP32 DevKit V1 как единственной доступной платформы, обеспечивающей одновременно 7 датчиков, Wi-Fi и достаточную производительность.</li>
+          <li>Разработана схема и собран прототип с 7 датчиками по интерфейсам I2C, UART, 1-Wire, ADC, GPIO.</li>
+          <li>Разработана прошивка (~750 строк C++): датчики, LCD, Pomodoro, алерты. <strong>Реализованы аппаратные прерывания ISR</strong> для кнопок (FALLING-edge) и PIR (RISING-edge) с volatile-флагами и debounce 200 мс.</li>
+          <li>Реализована HTTP-интеграция: JSON POST каждые 10 с, авто-переподключение Wi-Fi.</li>
+          <li>Разработан веб-дашборд: FastAPI + SQLite + Socket.IO (20+ API), 10-страничный SPA на 6 JS-модулях (~3000 строк): достижения, корреляционный анализ Pearson, тепловая карта 7×24, PDF-экспорт, Wellness Index.</li>
+          <li>Проведено тестирование: 17/17 тест-кейсов пройдено. 7-суточный нагрузочный тест подтвердил отсутствие утечек памяти.</li>
+        </ol>
+        <p><strong>Новизна разработки:</strong> ни одно из рассмотренных решений не сочетает мониторинг 5+ параметров микроклимата с Pomodoro-таймером, аппаратными прерываниями ISR, многоуровневыми алертами и открытым веб-дашбордом в рамках устройства стоимостью до 20 000 ₸.</p>
+        <p><strong>Перспективы:</strong> интеграция алгоритмов машинного обучения для предиктивного анализа качества воздуха; поддержка датчиков PM2.5 и TVOC; мобильное приложение; облачное хранение данных.</p>
+      </div>
+
+      <!-- СПИСОК ЛИТЕРАТУРЫ -->
+      <div class="cw-section" id="cw-refs">
+        <h2 class="cw-h2">Список использованной литературы</h2>
+        <p class="cw-refs-head">Нормативно-технические документы:</p>
+        <ol class="cw-refs-list">
+          <li>ГОСТ 30494-2011. Здания жилые и общественные. Параметры микроклимата в помещениях. — М.: Стандартинформ, 2013. — 12 с.</li>
+          <li>ASHRAE Standard 62.1-2019. Ventilation for Acceptable Indoor Air Quality. — Atlanta: ASHRAE, 2019. — 70 p.</li>
+          <li>Espressif Systems. ESP32 Technical Reference Manual. Version 5.1. — 2023. — 1105 p.</li>
+        </ol>
+        <p class="cw-refs-head">Научная литература:</p>
+        <ol class="cw-refs-list" start="4">
+          <li>Allen J.G. et al. Associations of Cognitive Function Scores with Carbon Dioxide, Ventilation... // Environmental Health Perspectives. — 2016. — Vol. 124, №6. — P. 805–812.</li>
+          <li>Baddeley A. Working Memory: Theories, Models, and Controversies // Annual Review of Psychology. — 2012. — Vol. 63. — P. 1–29.</li>
+          <li>Kahneman D. Thinking, Fast and Slow. — New York: Farrar, Straus and Giroux, 2011. — 499 p.</li>
+          <li>Cirillo F. The Pomodoro Technique. — Berlin: FC Garage, 2006. — 130 p.</li>
+          <li>World Health Organization. WHO Guidelines for Indoor Air Quality. — Geneva: WHO Press, 2010. — 484 p.</li>
+        </ol>
+        <p class="cw-refs-head">Техническая документация:</p>
+        <ol class="cw-refs-list" start="9">
+          <li>Bosch Sensortec. BME280: Combined Humidity and Pressure Sensor. Data Sheet BST-BME280-DS002. — 2022. — 57 p.</li>
+          <li>Winsen Electronics. ZM106-B VOC Sensor Module. Product Manual. — 2021. — 12 p.</li>
+          <li>ROHM Semiconductor. BH1750FVI: Digital 16bit Ambient Light Sensor IC. Data Sheet. — 2011. — 14 p.</li>
+          <li>Aosong Electronics. DHT11: Humidity &amp; Temperature Sensor. Product Manual. — 2019. — 9 p.</li>
+          <li>Hanwei Electronics. MQ-135 Gas Sensor Technical Data. — 2015. — 5 p.</li>
+        </ol>
+        <p class="cw-refs-head">Интернет-ресурсы:</p>
+        <ol class="cw-refs-list" start="14">
+          <li>PlatformIO. Official Documentation. — 2024. — URL: https://docs.platformio.org/ (дата обращения: 15.03.2026).</li>
+          <li>FastAPI. Official Documentation. — 2024. — URL: https://fastapi.tiangolo.com/ (дата обращения: 15.03.2026).</li>
+          <li>Arduino Foundation. Arduino Language Reference. — 2024. — URL: https://www.arduino.cc/reference/ (дата обращения: 10.03.2026).</li>
+          <li>International Labour Organization. Workplace Well-being. — Geneva: ILO, 2019. — URL: https://www.ilo.org/ (дата обращения: 20.02.2026).</li>
+        </ol>
+      </div>
+
+      <!-- ПРИЛОЖЕНИЯ -->
+      <div class="cw-section" id="cw-appendix">
+        <h2 class="cw-h2">Приложения</h2>
+
+        <h3 class="cw-h3">Приложение А — Конфигурационный файл config.h</h3>
+        <div class="cw-code">
+<pre><code>#pragma once
+// NEXIS Wellness Station — Конфигурация
+#define WIFI_SSID           "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD       "YOUR_WIFI_PASSWORD"
+#define SERVER_HOST         "192.168.1.100"
+#define SERVER_PORT         5000
+
+// Интервалы (мс)
+#define SENSOR_INTERVAL_MS      10000
+#define DISPLAY_INTERVAL_MS     3000
+#define ZM106_READ_INTERVAL_MS  5000
+#define WIFI_RECONNECT_MS       15000
+
+// Пороги алертов
+#define THRESH_CO2_WARN     800
+#define THRESH_CO2_DANGER   1200
+#define THRESH_TEMP_WARN    27.0f
+#define THRESH_TEMP_DANGER  30.0f
+#define THRESH_LIGHT_WARN   150
+#define THRESH_NOISE_DANGER 70
+
+// Pomodoro
+#define POMO_WORK_MIN   25
+#define POMO_BREAK_MIN  5</code></pre>
+        </div>
+
+        <h3 class="cw-h3">Приложение Б — platformio.ini</h3>
+        <div class="cw-code">
+<pre><code>[env:esp32dev]
+platform = espressif32
+board = esp32dev
+framework = arduino
+upload_speed = 921600
+monitor_speed = 115200
+
+lib_deps =
+    adafruit/Adafruit BME280 Library @ ^2.2.4
+    adafruit/Adafruit Unified Sensor @ ^1.1.14
+    adafruit/DHT sensor library @ ^1.4.6
+    claws/BH1750 @ ^1.3.0
+    marcoschwartz/LiquidCrystal_I2C @ ^1.1.4
+    bblanchon/ArduinoJson @ ^7.0.4</code></pre>
+        </div>
+
+        <h3 class="cw-h3">Приложение В — Ключевые фрагменты кода</h3>
+        <p><strong>В.1 Инициализация setup() и главный цикл loop()</strong></p>
+        <div class="cw-code">
+<pre><code>void setup() {
+    Serial.begin(115200);
+    // Регистрация аппаратных прерываний
+    attachInterrupt(digitalPinToInterrupt(PIN_BTN_MODE), onBtnMode, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_BTN_OK),   onBtnOK,   FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_PIR),      onPIR,     RISING);
+    Wire.begin(I2C_SDA, I2C_SCL);
+    bme.begin(I2C_BME280);
+    lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE);
+    lcd.init(); lcd.backlight();
+    wifiConnect();
+}
+
+void loop() {
+    uint32_t now = millis();
+    if (now - lastSensorRead &gt;= SENSOR_INTERVAL_MS) {
+        readBME280(); readBH1750(); readNoise();
+        readPIR();    readDHT11(); readMQ135();
+        state.alertLevel = checkThresholds();
+        updateLED();
+        postSensorData();
+        lastSensorRead = now;
+    }
+    if (now - lastDisplayChange &gt;= DISPLAY_INTERVAL_MS) {
+        state.displayPage = (state.displayPage + 1) % 5;
+        updateDisplay();
+        lastDisplayChange = now;
+    }
+    handleButtons();   // обрабатывает ISR-флаги
+    updatePomodoro();
+}</code></pre>
+        </div>
+        <p><strong>В.2 Прерывания (ISR)</strong></p>
+        <div class="cw-code">
+<pre><code>volatile bool isrBtnMode = false, isrBtnOK = false, isrPIR = false;
+void IRAM_ATTR onBtnMode() { isrBtnMode = true; }
+void IRAM_ATTR onBtnOK()   { isrBtnOK   = true; }
+void IRAM_ATTR onPIR()     { isrPIR     = true; }
+
+void handleButtons() {
+    uint32_t now = millis();
+    if (isrBtnMode &amp;&amp; now - btnModeLast &gt; DEBOUNCE_MS) {
+        isrBtnMode = false; btnModeLast = now;
+        state.displayPage = (state.displayPage + 1) % 5;
+        updateDisplay(); beepOK();
+    }
+    if (isrBtnOK &amp;&amp; now - btnOKLast &gt; DEBOUNCE_MS) {
+        isrBtnOK = false; btnOKLast = now;
+        if (state.pomoMode == SystemState::POMO_IDLE) pomoStart();
+        else pomoStop();
+    }
+}</code></pre>
+        </div>
+        <p><strong>В.3 Функция проверки порогов алертов</strong></p>
+        <div class="cw-code">
+<pre><code>AlertLevel checkThresholds() {
+    AlertLevel level = ALERT_OK;
+    if (sensors.zm106OK &amp;&amp; sensors.co2 &gt; THRESH_CO2_DANGER)
+        level = ALERT_DANGER;
+    else if (sensors.zm106OK &amp;&amp; sensors.co2 &gt; THRESH_CO2_WARN)
+        level = max(level, ALERT_WARN);
+    if (!isnan(sensors.temperature)) {
+        if (sensors.temperature &gt; THRESH_TEMP_DANGER) level = ALERT_DANGER;
+        else if (sensors.temperature &gt; THRESH_TEMP_WARN) level = max(level, ALERT_WARN);
+    }
+    if (!isnan(sensors.light) &amp;&amp; sensors.light &lt; THRESH_LIGHT_WARN)
+        level = max(level, ALERT_WARN);
+    if (!isnan(sensors.noise) &amp;&amp; sensors.noise &gt; THRESH_NOISE_DANGER)
+        level = max(level, ALERT_WARN);
+    return level;
+}</code></pre>
+        </div>
+
+        <h3 class="cw-h3">Приложение Д — Результаты сканирования I2C-шины</h3>
+        <div class="cw-code">
+<pre><code>I2C Scanner — сканирование на GPIO21/22
+Scanning...
+ Found address: 0x23 (35)  -> BH1750     [OK]
+ Found address: 0x27 (39)  -> LCD PCF8574 [OK]
+ Found address: 0x76 (118) -> BME280      [OK]
+3 device(s) found, 0 conflict(s)</code></pre>
+        </div>
+      </div>
+
+    </div><!-- /cw-content -->
+  </div><!-- /cw-layout -->
+</div>

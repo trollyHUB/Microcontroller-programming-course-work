@@ -28,12 +28,13 @@ const logger = {
     const entry = {
       id: Date.now() + Math.random(),
       time: new Date(),
-      type,   // 'sensor' | 'alert' | 'pomodoro' | 'system'
+      type,   // 'sensor' | 'alert' | 'pomodoro' | 'task' | 'health' | 'system'
       message,
     };
     this.entries.unshift(entry);
     if (this.entries.length > this.maxEntries) this.entries.pop();
     this.render();
+    this.updateStats();
 
     // Обновить бейдж
     const nb = document.getElementById('nb-logs');
@@ -61,7 +62,19 @@ const logger = {
   },
 
   typeLabel(t) {
-    return { sensor: 'Датчик', alert: 'Алерт', pomodoro: 'Pomodoro', system: 'Система' }[t] || t;
+    return { sensor: 'Датчик', alert: 'Алерт', pomodoro: 'Pomodoro', task: 'Задача', health: 'Здоровье', system: 'Система' }[t] || t;
+  },
+
+  updateStats() {
+    const count = type => this.entries.filter(e => e.type === type).length;
+    const el = id => document.getElementById(id);
+    const a = el('ls-alerts');   if (a)  a.textContent  = count('alert');
+    const p = el('ls-pomodoro'); if (p)  p.textContent  = count('pomodoro');
+    const t = el('ls-tasks');    if (t)  t.textContent  = count('task');
+    const h = el('ls-health');   if (h)  h.textContent  = count('health');
+    const tot = el('ls-total');  if (tot) tot.textContent = this.entries.length;
+    const badge = el('log-count-badge');
+    if (badge) badge.textContent = this.entries.length + ' событий';
   },
 
   clear() {

@@ -1,0 +1,57 @@
+<!-- ═══ СТРАНИЦА: ЖУРНАЛ СОБЫТИЙ ═══ -->
+<div class="page" id="page-logs">
+  <div class="page-header">
+    <h1 class="page-title">&#128203; Журнал событий</h1>
+    <p class="page-desc">Полная история всех действий и событий системы за день</p>
+  </div>
+
+  <!-- Тулбар -->
+  <div class="logs-toolbar">
+    <div class="log-filters">
+      <button class="lf-btn active" data-filter="all">Все</button>
+      <button class="lf-btn" data-filter="sensor">&#128268; Датчики</button>
+      <button class="lf-btn" data-filter="alert">&#9888; Алерты</button>
+      <button class="lf-btn" data-filter="pomodoro">&#127813; Pomodoro</button>
+      <button class="lf-btn" data-filter="task">&#9989; Задачи</button>
+      <button class="lf-btn" data-filter="health">&#127973; Здоровье</button>
+      <button class="lf-btn" data-filter="system">&#9881; Система</button>
+    </div>
+    <div class="log-toolbar-right">
+      <span class="log-count-badge" id="log-count-badge">0 событий</span>
+      <button class="log-export-btn" onclick="exportLogsCSV()">&#11015; CSV</button>
+      <button class="log-clear-btn" onclick="logger.clear()">&#128465; Очистить</button>
+    </div>
+  </div>
+
+  <!-- Статистика журнала -->
+  <div class="log-stats-row">
+    <div class="log-stat-box">
+      <span class="log-stat-num" id="ls-alerts">0</span>
+      <span class="log-stat-label">Алертов</span>
+    </div>
+    <div class="log-stat-box">
+      <span class="log-stat-num" id="ls-pomodoro">0</span>
+      <span class="log-stat-label">Pomodoro</span>
+    </div>
+    <div class="log-stat-box">
+      <span class="log-stat-num" id="ls-tasks">0</span>
+      <span class="log-stat-label">Задач</span>
+    </div>
+    <div class="log-stat-box">
+      <span class="log-stat-num" id="ls-health">0</span>
+      <span class="log-stat-label">Здоровье</span>
+    </div>
+    <div class="log-stat-box">
+      <span class="log-stat-num" id="ls-total">0</span>
+      <span class="log-stat-label">Всего</span>
+    </div>
+  </div>
+
+  <!-- Timeline журнала -->
+  <div class="logs-timeline" id="logsContainer"></div>
+
+  <!-- Подгрузить ещё -->
+  <div class="log-load-more" id="log-load-more" style="display:none">
+    <button class="log-load-btn" onclick="logger.loadMore()">Показать ещё...</button>
+  </div>
+</div>

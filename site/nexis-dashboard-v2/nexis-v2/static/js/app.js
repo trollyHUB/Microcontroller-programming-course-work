@@ -45,17 +45,18 @@ function navigateTo(page) {
   state.currentPage = page;
 
   // Обновить topbar title
-  if (page === 'analytics') { loadAnalytics(); setTimeout(initCorrelation, 300); }
+  if (page === 'analytics') { loadAnalytics(); setTimeout(initCorrelation, 300); loadWeeklyStats(); }
   if (page === 'dashboard') { loadWellnessHistory(); }
   if (page === 'pomodoro')  { loadWeeklyStats(); loadAnalyticsComparison(_analyticsMetric); }
   if (page === 'settings')  { checkTelegramStatus(); if (typeof loadNotifSettings === 'function') loadNotifSettings(); }
   if (page === 'timer' && !_timerPageInited) { initTimerPage(); _timerPageInited = true; }
-  if (page === 'tasks')  { initTasksPage(); }
+  if (page === 'tasks')        { initTasksPage(); }
+  if (page === 'achievements') { if (typeof achievements !== 'undefined') achievements.render(); }
 
   const titles = {
     'dashboard': 'Dashboard', 'pomodoro': 'Pomodoro', 'logs': 'Журнал событий',
     'analytics': 'Аналитика', 'about': 'О станции', 'coursework': 'Курсовая работа', 'settings': 'Настройки',
-    'timer': 'Таймер', 'tasks': 'Задачи дня',
+    'timer': 'Таймер', 'tasks': 'Задачи дня', 'achievements': 'Достижения',
     'sensor-temp': 'Температура', 'sensor-hum': 'Влажность',
     'sensor-co2': 'CO₂ / Воздух', 'sensor-light': 'Освещённость',
     'sensor-noise': 'Шум', 'sensor-motion': 'Присутствие',
@@ -426,6 +427,9 @@ function applyData(data) {
       focusTile.classList.remove('pomo-active');
     }
   }
+
+  // Достижения + Day Score
+  if (typeof achievements !== 'undefined') achievements.onSensorUpdate(data);
 }
 
 
@@ -605,6 +609,12 @@ function init() {
   // Трекер воды и защита глаз
   if (typeof hydrationModule !== 'undefined') hydrationModule.init();
   if (typeof eyeStrainModule !== 'undefined') eyeStrainModule.init();
+
+  // Достижения и Day Score
+  if (typeof achievements !== 'undefined') achievements.init();
+
+  // Кнопка звука
+  initSoundBtn();
 }
 
 // ──────────────────────────────────────────────────
@@ -658,6 +668,194 @@ window.updateBottomNav = updateBottomNav;
     if (next !== cur) { navigateTo(pages[next]); updateBottomNav(pages[next]); }
   }, { passive: true });
 })();
+
+// ──────────────────────────────────────────────────
+// DND — Не беспокоить
+// ──────────────────────────────────────────────────
+let _dndActive = false;
+let _dndTimer  = null;
+
+function toggleDND(forceOff) {
+  if (forceOff === true) _dndActive = false;
+  else _dndActive = !_dndActive;
+
+  const btn = document.getElementById('dndBtn');
+  if (btn) {
+    btn.classList.toggle('dnd-on', _dndActive);
+    btn.title = _dndActive ? 'Не беспокоить — ВКЛ (нажмите, чтобы отключить)' : 'Не беспокоить';
+    btn.textContent = _dndActive ? '🔕' : '🔔';
+  }
+
+  clearTimeout(_dndTimer);
+  if (_dndActive) {
+    toast.show('🔕 Не беспокоить включён на 25 минут', 'info', 3000);
+    logger.add('system', 'Не беспокоить: включён');
+    _dndTimer = setTimeout(() => toggleDND(true), 25 * 60 * 1000);
+  } else {
+    toast.show('🔔 Режим "Не беспокоить" выключен', 'info', 2000);
+    logger.add('system', 'Не беспокоить: выключен');
+  }
+}
+window.toggleDND = toggleDND;
+
+// Патчим toast.show — при DND скрываем некритичные тосты
+const _origToastShow = toast.show.bind(toast);
+toast.show = function(msg, level = 'info', dur = 4000) {
+  if (_dndActive && level !== 'danger') return;
+  _origToastShow(msg, level, dur);
+};
+
+// ──────────────────────────────────────────────────
+// ЗВУК — кнопка вкл/выкл
+// ──────────────────────────────────────────────────
+function toggleSoundUI() {
+  if (typeof nexisSound === 'undefined') return;
+  const on = nexisSound.toggle();
+  const btn = document.getElementById('soundBtn');
+  if (btn) btn.textContent = on ? '🔊' : '🔇';
+  _origToastShow(on ? '🔊 Звуки включены' : '🔇 Звуки выключены', 'info', 2000);
+}
+window.toggleSoundUI = toggleSoundUI;
+
+function initSoundBtn() {
+  const btn = document.getElementById('soundBtn');
+  if (btn && typeof nexisSound !== 'undefined') {
+    btn.textContent = nexisSound.isEnabled() ? '🔊' : '🔇';
+  }
+}
+
+// ──────────────────────────────────────────────────
+// ЖУРНАЛ — фильтры и экспорт
+// ──────────────────────────────────────────────────
+document.querySelectorAll('.lf-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    logger.setFilter(btn.dataset.filter || 'all');
+  });
+});
+
+function exportLogsCSV() {
+  const rows = [['Время', 'Тип', 'Сообщение']];
+  logger.entries.forEach(e => {
+    rows.push([
+      e.time.toLocaleString('ru'),
+      logger.typeLabel(e.type),
+      e.message.replace(/;/g, ','),
+    ]);
+  });
+  const bom = '﻿';
+  const csv = bom + rows.map(r => r.join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'nexis-logs-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+window.exportLogsCSV = exportLogsCSV;
+
+// ──────────────────────────────────────────────────
+// PDF ОТЧЁТ ДНЯ
+// ──────────────────────────────────────────────────
+function exportDayPDF() {
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    toast.show('jsPDF не загружен', 'danger', 3000);
+    return;
+  }
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const s = state.sensors;
+  const today = new Date().toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' });
+  const wi  = document.getElementById('wellness-index')?.textContent || '--';
+  const ds  = document.getElementById('day-score-num')?.textContent  || '--';
+  const dsg = document.getElementById('day-score-grade')?.textContent || '';
+  const cycles = localStorage.getItem('nexis-pomo-cycles') || '0';
+  const goal   = localStorage.getItem('nexis-pomo-goal')   || '8';
+
+  let y = 20;
+  const lh = 8;
+  const col1 = 20, col2 = 120;
+
+  // Шапка
+  doc.setFillColor(13, 14, 20);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(77, 158, 255);
+  doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+  doc.text('NEXIS Wellness Station', col1, 14);
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 190, 220);
+  doc.text('Отчёт рабочего дня · ' + today, col1, 22);
+  y = 40;
+
+  // Wellness Index + Day Score
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+  doc.text('Wellness Index: ' + wi + ' / 100', col1, y);
+  doc.text('День: ' + ds + ' / 100  (' + dsg + ')', col2, y);
+  y += lh * 1.5;
+
+  // Разделитель
+  doc.setDrawColor(200, 200, 200);
+  doc.line(col1, y, 190, y); y += lh;
+
+  // Датчики
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+  doc.text('Показатели датчиков', col1, y); y += lh;
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+
+  const rows = [
+    ['Температура', s.temperature != null ? s.temperature.toFixed(1) + ' °C' : '--'],
+    ['Влажность',   s.humidity    != null ? s.humidity.toFixed(1)    + ' %'  : '--'],
+    ['CO₂',         s.co2         != null ? Math.round(s.co2)        + ' ppm': '--'],
+    ['Освещённость',s.light       != null ? Math.round(s.light)      + ' lux': '--'],
+    ['Шум',         s.noise       != null ? s.noise.toFixed(1)       + ' dB' : '--'],
+    ['Давление',    s.pressure    != null ? s.pressure.toFixed(1)    + ' hPa': '--'],
+  ];
+  rows.forEach(([label, val]) => {
+    doc.text(label + ':', col1, y);
+    doc.text(val, col1 + 55, y);
+    y += lh;
+  });
+
+  y += 4;
+  doc.line(col1, y, 190, y); y += lh;
+
+  // Продуктивность
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+  doc.text('Продуктивность', col1, y); y += lh;
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.text('Pomodoro завершено: ' + cycles + ' / ' + goal, col1, y); y += lh;
+  const taskLabel = document.getElementById('task-progress-label')?.textContent || '0 / 0 задач';
+  doc.text('Задачи: ' + taskLabel, col1, y); y += lh;
+  const energyLevel = parseInt(localStorage.getItem('nexis-energy-level') || '0');
+  const energyText  = ['—','Истощён','Устал','Нормально','Хорошо','Отлично'][energyLevel] || '—';
+  doc.text('Уровень энергии: ' + energyText + ' (' + energyLevel + '/5)', col1, y); y += lh * 1.5;
+
+  // Алерты из журнала
+  const alerts = logger.entries.filter(e => e.type === 'alert').slice(0, 5);
+  if (alerts.length) {
+    doc.line(col1, y, 190, y); y += lh;
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text('Алерты за день (' + alerts.length + ')', col1, y); y += lh;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    alerts.forEach(a => {
+      const line = doc.splitTextToSize(a.time.toLocaleTimeString('ru') + '  ' + a.message, 170);
+      doc.text(line, col1, y); y += lh * line.length;
+    });
+  }
+
+  // Подпись
+  y = Math.max(y + 10, 260);
+  doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+  doc.text('NEXIS Wellness Station v2 · ESP32 IoT Dashboard · ' + new Date().toLocaleString('ru'), col1, y);
+
+  doc.save('nexis-report-' + new Date().toISOString().slice(0, 10) + '.pdf');
+  toast.show('📄 PDF-отчёт сохранён', 'success', 3000);
+  logger.add('system', 'PDF-отчёт дня экспортирован');
+}
+window.exportDayPDF = exportDayPDF;
 
 document.addEventListener('DOMContentLoaded', init);
 

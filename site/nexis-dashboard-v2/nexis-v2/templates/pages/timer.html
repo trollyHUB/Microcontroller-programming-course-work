@@ -1,0 +1,60 @@
+<!-- ═══ СТРАНИЦА: ТАЙМЕР ═══ -->
+<div class="page" id="page-timer">
+  <div class="page-header">
+    <h1 class="page-title">&#9201; Таймер</h1>
+    <p class="page-desc">Обратный таймер, секундомер и фоновые звуки для концентрации</p>
+  </div>
+  <div class="timer-page-layout">
+    <div class="timer-tabs">
+      <button class="timer-tab-btn active" data-tab="countdown">&#9197; Таймер</button>
+      <button class="timer-tab-btn" data-tab="stopwatch">&#9200; Секундомер</button>
+    </div>
+    <div class="timer-tab-content active" id="timer-tab-countdown">
+      <div class="timer-ring-wrap">
+        <svg class="timer-ring" viewBox="0 0 200 200">
+          <circle class="timer-ring-bg" cx="100" cy="100" r="88"/>
+          <circle class="timer-ring-fill" id="timer-ring-fill" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-center">
+          <div class="timer-big-display" id="timer-display">25:00</div>
+          <div class="timer-center-label">осталось</div>
+        </div>
+      </div>
+      <div class="timer-presets">
+        <button class="timer-preset" data-min="5">5 мин</button>
+        <button class="timer-preset" data-min="10">10 мин</button>
+        <button class="timer-preset" data-min="25">25 мин</button>
+        <button class="timer-preset" data-min="45">45 мин</button>
+        <button class="timer-preset" data-min="60">60 мин</button>
+      </div>
+      <div class="timer-custom-row">
+        <button class="timer-adj-btn" id="timer-sub-5">−5</button>
+        <input type="number" id="timerMinutes" class="timer-minutes-input" min="1" max="180" value="25">
+        <span class="timer-minutes-label">мин</span>
+        <button class="timer-adj-btn" id="timer-add-5">+5</button>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn-main" id="timerStartBtn">&#9654; Старт</button>
+        <button class="timer-btn-reset" id="timerResetBtn">&#8635; Сброс</button>
+      </div>
+    </div>
+    <div class="timer-tab-content" id="timer-tab-stopwatch">
+      <div class="sw-display-wrap">
+        <div class="sw-big-display" id="sw-display">00:00.00</div>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn-main" id="swStartBtn">&#9654; Старт</button>
+        <button class="timer-btn-reset" id="swLapBtn">&#9872; Круг</button>
+        <button class="timer-btn-secondary" id="swResetBtn">&#8635; Сброс</button>
+      </div>
+      <div class="sw-laps-wrap">
+        <div class="sw-laps-header"><span>Отметка</span><span>Время круга</span><span>Общее</span></div>
+        <div class="sw-laps" id="sw-laps"><div class="sw-no-laps">Нет отметок</div></div>
+      </div>
+    </div>
+    <div class="timer-ambient-card">
+      <div class="card-title">&#127911; Фоновые звуки</div>
+      <div class="ambient-panel"></div>
+    </div>
+  </div>
+</div>

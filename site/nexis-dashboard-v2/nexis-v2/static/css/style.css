@@ -513,6 +513,18 @@ ul, ol { padding-left: 20px; }
 .cw-refs-list { color: var(--text2); font-size: 13px; }
 .cw-refs-list li { margin-bottom: 8px; line-height: 1.6; }
 
+/* Блок кода в курсовой */
+.cw-code { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin: 12px 0; overflow-x: auto; }
+.cw-code pre { margin: 0; font-size: 12px; line-height: 1.6; }
+.cw-code code { font-family: 'Courier New', Consolas, monospace; color: var(--accent); }
+
+/* Дополнительные элементы курсовой */
+.cw-caption { font-size: 12px; color: var(--text3); text-align: center; margin: -6px 0 12px; font-style: italic; }
+.cw-h4 { font-size: 13px; font-weight: 600; color: var(--text); margin: 18px 0 8px; }
+.cw-pass { color: #4caf50; font-weight: 600; }
+.cw-refs-head { font-size: 13px; font-weight: 600; color: var(--text2); margin: 14px 0 6px; }
+.toc-sub2 { padding-left: 2.5rem !important; font-size: 11px !important; }
+
 /* Титульный лист */
 .cw-titlepage {
   text-align: center; display: flex; flex-direction: column; gap: 16px;
@@ -1535,6 +1547,299 @@ body.focus-mode .sensor-tiles { grid-template-columns: repeat(4, 1fr); }
 }
 .digest-tg-btn:hover { opacity: 0.85; }
 .digest-tg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════
+   TOPBAR BUTTONS (DND, Sound)
+══════════════════════════════════════════ */
+.dnd-btn, .sound-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 7px;
+  color: var(--text2); font-size: 15px; padding: 4px 8px; cursor: pointer;
+  transition: all 0.18s; line-height: 1;
+}
+.dnd-btn:hover, .sound-btn:hover { border-color: var(--blue); color: var(--text); }
+.dnd-btn.dnd-on { background: rgba(240,64,64,0.15); border-color: var(--red); color: var(--red); }
+
+/* ══════════════════════════════════════════
+   DASHBOARD QUICK ACTIONS
+══════════════════════════════════════════ */
+.dash-quick-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;
+}
+.dqa-btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer;
+  background: var(--bg2); border: 1px solid var(--border2); color: var(--text2);
+  transition: all 0.18s; font-family: var(--sans);
+}
+.dqa-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-d); }
+
+/* ══════════════════════════════════════════
+   ДАЙДЖЕСТ НЕДЕЛИ + ТЕПЛОВАЯ КАРТА
+══════════════════════════════════════════ */
+.week-digest-card {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r);
+  padding: 16px 18px; margin-bottom: 14px;
+}
+.week-digest-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 12px 0;
+}
+.wdg-item {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; text-align: center;
+}
+.wdg-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+.wdg-val   { font-size: 18px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.week-heatmap-wrap { margin-top: 14px; }
+.wh-title { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.week-heatmap {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+}
+.wh-cell {
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px;
+  text-align: center; cursor: default; transition: transform 0.15s;
+}
+.wh-cell:hover { transform: scale(1.05); }
+.wh-day-name  { font-size: 11px; color: var(--text2); font-weight: 600; }
+.wh-day-date  { font-size: 10px; color: var(--text3); margin: 2px 0; }
+.wh-pomo-count { font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+
+/* ══════════════════════════════════════════
+   ЗДОРОВЫЙ ДЕНЬ — Day Score Card
+══════════════════════════════════════════ */
+.day-score-card {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 14px 18px; margin-bottom: 14px;
+}
+.day-score-left { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+.day-score-icon { font-size: 26px; line-height: 1; }
+.day-score-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.day-score-desc  { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.day-score-center { flex: 1; }
+.day-score-bars  { display: flex; flex-direction: column; gap: 6px; }
+.dsb-item { display: flex; align-items: center; gap: 8px; }
+.dsb-label { font-size: 11px; color: var(--text2); min-width: 58px; }
+.dsb-track {
+  flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden;
+}
+.dsb-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.dsb-env   { background: var(--green); }
+.dsb-pomo  { background: var(--amber); }
+.dsb-focus { background: var(--blue); }
+.dsb-val { font-size: 11px; color: var(--text2); min-width: 32px; text-align: right; font-family: var(--mono); }
+.day-score-right { text-align: center; min-width: 64px; }
+.day-score-num  { font-size: 32px; font-weight: 700; font-family: var(--mono); color: var(--text); line-height: 1; }
+.day-score-max  { font-size: 11px; color: var(--text3); }
+.day-score-grade { font-size: 12px; font-weight: 600; margin-top: 4px; }
+.grade-a { color: var(--green); }
+.grade-b { color: #4d9eff; }
+.grade-c { color: var(--amber); }
+.grade-d { color: var(--red); }
+
+/* ══════════════════════════════════════════
+   ДОСТИЖЕНИЯ — Achievement Toast
+══════════════════════════════════════════ */
+.ach-unlock-toast {
+  position: fixed; bottom: 88px; right: 20px; z-index: 2000;
+  display: none; align-items: center; gap: 12px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--r); padding: 12px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  opacity: 0; transition: opacity 0.35s, transform 0.35s;
+  transform: translateX(30px);
+}
+.ach-unlock-toast.show { opacity: 1; transform: translateX(0); }
+.ach-unlock-icon { font-size: 24px; }
+.ach-unlock-title { font-size: 11px; color: var(--text2); }
+.ach-unlock-name  { font-size: 13px; font-weight: 600; color: var(--amber); }
+
+/* ══════════════════════════════════════════
+   ДОСТИЖЕНИЯ — Страница
+══════════════════════════════════════════ */
+.ach-overview {
+  display: flex; align-items: center; gap: 20px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 18px 22px; margin-bottom: 18px;
+}
+.ach-overview-score { text-align: center; min-width: 60px; }
+.ach-total-num   { font-size: 36px; font-weight: 700; font-family: var(--mono); color: var(--green); line-height: 1; }
+.ach-total-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.ach-overview-bar-wrap { flex: 1; }
+.ach-overview-title { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.ach-overview-bar-track {
+  height: 8px; background: var(--bg4); border-radius: 4px; overflow: hidden;
+}
+.ach-overview-bar-fill {
+  height: 100%; background: var(--green); border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.ach-overview-pct { font-size: 11px; color: var(--text3); margin-top: 4px; text-align: right; font-family: var(--mono); }
+.ach-overview-streak { text-align: center; min-width: 60px; }
+.ach-streak-num   { font-size: 36px; font-weight: 700; font-family: var(--mono); color: var(--amber); line-height: 1; }
+.ach-streak-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+.ach-categories {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 18px;
+}
+.ach-category-card {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r); padding: 14px 16px;
+}
+.ach-cat-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.ach-list { display: flex; flex-direction: column; gap: 6px; }
+
+.ach-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; background: var(--bg3);
+  border: 1px solid var(--border); transition: opacity 0.2s;
+}
+.ach-item.locked { opacity: 0.45; filter: grayscale(0.6); }
+.ach-item.unlocked { border-color: rgba(32,201,122,0.25); }
+.ach-icon { font-size: 20px; min-width: 26px; text-align: center; }
+.ach-info { flex: 1; min-width: 0; }
+.ach-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ach-desc  { font-size: 11px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ach-status-badge {
+  font-size: 12px; font-weight: 700; min-width: 22px; text-align: center;
+  color: var(--text3);
+}
+.ach-item.unlocked .ach-status-badge { color: var(--green); }
+
+.ach-recent-card {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r); padding: 14px 16px;
+}
+.ach-recent-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.ach-recent-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg3); border-radius: 8px; }
+.ach-recent-icon { font-size: 20px; }
+.ach-recent-title { font-size: 12px; font-weight: 600; color: var(--text); }
+.ach-recent-desc  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+/* ── Badge стиль в nav ── */
+.ach-badge { background: rgba(245,166,35,0.2); color: var(--amber); }
+
+/* ── Ежедневные / Недельные категории ── */
+.ach-category-daily  { border-left: 3px solid var(--blue) !important; }
+.ach-category-weekly { border-left: 3px solid var(--green) !important; }
+.ach-cat-reset-hint  { font-size: 10px; font-weight: 400; color: var(--text3); margin-left: 6px; }
+
+/* ── Прогресс-строка для тайминговых ачивок ── */
+.ach-timed-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ach-timed-bar  { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.ach-timed-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width 0.4s; }
+.ach-timed-fill-week { background: var(--green); }
+.ach-timed-lbl  { font-size: 11px; color: var(--text3); white-space: nowrap; }
+
+/* ── Бейдж периода (Сегодня / Эта неделя) ── */
+.ach-period-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 12px; white-space: nowrap; flex-shrink: 0;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text3);
+}
+.ach-period-badge.ach-period-earned {
+  background: rgba(52,199,89,0.15); border-color: var(--green); color: var(--green); font-weight: 600;
+}
+
+/* ── Счётчик воды ── */
+.ach-water-row  { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px 12px; background: var(--bg3); border-radius: 8px; }
+.ach-water-label { font-size: 12px; color: var(--text2); flex: 1; }
+.ach-water-count { font-size: 16px; font-weight: 700; color: var(--blue); min-width: 24px; text-align: center; }
+.ach-water-btn  {
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border2);
+  background: var(--bg2); color: var(--text); font-size: 16px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.ach-water-btn:hover { background: var(--blue-d); border-color: var(--blue); color: var(--blue); }
+.ach-water-btn-minus { color: var(--text3); }
+
+/* ══════════════════════════════════════════
+   ЖУРНАЛ СОБЫТИЙ — Logs Page
+══════════════════════════════════════════ */
+.logs-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.log-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.lf-btn {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2);
+  transition: all 0.18s;
+}
+.lf-btn.active { background: var(--blue-d); border-color: var(--blue); color: var(--blue); }
+.lf-btn:hover:not(.active) { color: var(--text); }
+.log-toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.log-count-badge { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.log-clear-btn {
+  padding: 5px 10px; border-radius: 20px; font-size: 12px; cursor: pointer;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); transition: all 0.18s;
+}
+.log-clear-btn:hover { border-color: var(--red); color: var(--red); }
+.log-stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.log-stat-box {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 14px; text-align: center; display: flex; flex-direction: column; align-items: center;
+}
+.log-stat-num   { font-size: 18px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.log-stat-label { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.log-load-more  { text-align: center; margin-top: 8px; }
+.log-load-btn {
+  padding: 8px 20px; border-radius: 8px; background: var(--bg3);
+  border: 1px solid var(--border2); color: var(--text2); cursor: pointer;
+  font-size: 12px; transition: all 0.18s;
+}
+.log-load-btn:hover { border-color: var(--blue); color: var(--blue); }
+.logs-page-layout { display: flex; flex-direction: column; gap: 12px; }
+.logs-toolbar-compat { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.logs-filter-btn {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2);
+  transition: all 0.18s;
+}
+.logs-filter-btn.active { background: var(--blue-d); border-color: var(--blue); color: var(--blue); }
+.logs-filter-btn:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+.log-export-btn {
+  margin-left: auto; padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+  background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); transition: all 0.18s;
+}
+.log-export-btn:hover { border-color: var(--green); color: var(--green); }
+.log-stats-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.ls-stat {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 14px; text-align: center;
+}
+.ls-stat-val { font-size: 18px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.ls-stat-label { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.logs-timeline {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r);
+  padding: 8px; display: flex; flex-direction: column; gap: 4px;
+  max-height: 60vh; overflow-y: auto;
+}
+.log-entry {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  background: var(--bg3); border-radius: 7px; border-left: 3px solid var(--text3);
+}
+.log-entry.alert   { border-left-color: var(--red); }
+.log-entry.sensor  { border-left-color: var(--blue); }
+.log-entry.pomodoro{ border-left-color: var(--amber); }
+.log-entry.system  { border-left-color: var(--purple); }
+.log-entry.task    { border-left-color: var(--green); }
+.log-entry.health  { border-left-color: #20c97a; }
+.log-time { font-size: 11px; color: var(--text3); font-family: var(--mono); white-space: nowrap; }
+.log-type-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
+  white-space: nowrap; background: var(--bg4); color: var(--text2);
+}
+.log-type-badge.alert    { background: rgba(240,64,64,0.2);    color: var(--red); }
+.log-type-badge.sensor   { background: rgba(77,158,255,0.2);   color: var(--blue); }
+.log-type-badge.pomodoro { background: rgba(245,166,35,0.2);   color: var(--amber); }
+.log-type-badge.system   { background: rgba(155,127,245,0.2);  color: var(--purple); }
+.log-type-badge.task     { background: rgba(32,201,122,0.2);   color: var(--green); }
+.log-type-badge.health   { background: rgba(32,201,122,0.15);  color: #20c97a; }
+.log-msg { flex: 1; font-size: 12px; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logs-load-more {
+  padding: 8px 16px; border-radius: 8px; background: var(--bg3);
+  border: 1px solid var(--border2); color: var(--text2); cursor: pointer;
+  font-size: 12px; align-self: center; transition: all 0.18s;
+}
+.logs-load-more:hover { border-color: var(--blue); color: var(--blue); }
 
 @media print {
   .sidebar, .mode-switcher, .analytics-toolbar,

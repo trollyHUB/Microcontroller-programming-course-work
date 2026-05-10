@@ -1,0 +1,58 @@
+<!-- ═══ СТРАНИЦА: О СТАНЦИИ ═══ -->
+<div class="page" id="page-about">
+  <div class="page-header">
+    <h1 class="page-title">&#127968; О NEXIS Wellness Station</h1>
+    <p class="page-desc">Персональная интеллектуальная IoT-станция мониторинга</p>
+  </div>
+  <div class="about-layout">
+    <div class="about-hero">
+      <div class="about-logo-big">N</div>
+      <div class="about-hero-text">
+        <h2>NEXIS Wellness Station</h2>
+        <p>Интеллектуальное устройство для мониторинга параметров рабочего места и повышения личной продуктивности на базе ESP32.</p>
+        <div class="about-tags">
+          <span class="atag">ESP32</span><span class="atag">IoT</span><span class="atag">FastAPI</span>
+          <span class="atag">REST API</span><span class="atag">WebSocket</span><span class="atag">SQLite</span>
+          <span class="atag">BME280</span><span class="atag">Winsen ZM106-VOC</span><span class="atag">LCD 1602</span>
+        </div>
+      </div>
+    </div>
+    <div class="about-grid">
+      <div class="about-card"><div class="ac-icon">&#127760;</div><div class="ac-title">Университет</div><div class="ac-text">ЕНУ им. Л.Н. Гумилёва<br>Кафедра «Вычислительная техника и ПО»</div></div>
+      <div class="about-card"><div class="ac-icon">&#128218;</div><div class="ac-title">Дисциплина</div><div class="ac-text">PM3304<br>«Программирование микроконтроллеров»</div></div>
+      <div class="about-card"><div class="ac-icon">&#128106;</div><div class="ac-title">Руководитель</div><div class="ac-text">Байдельдинов М.У.<br>к.т.н., и.о. доцента</div></div>
+      <div class="about-card"><div class="ac-icon">&#128197;</div><div class="ac-title">Период</div><div class="ac-text">Февраль — Май 2026<br>Защита: Июнь 2026</div></div>
+    </div>
+    <div class="about-features">
+      <h3>Ключевые функции системы</h3>
+      <div class="af-grid">
+        <div class="af-item"><span>&#127777;</span> Мониторинг температуры и влажности</div>
+        <div class="af-item"><span>&#127807;</span> Анализ качества воздуха (CO₂/VOC)</div>
+        <div class="af-item"><span>&#128161;</span> Контроль освещённости рабочего места</div>
+        <div class="af-item"><span>&#128266;</span> Мониторинг уровня шума</div>
+        <div class="af-item"><span>&#128100;</span> Детекция присутствия (PIR датчик)</div>
+        <div class="af-item"><span>&#127813;</span> Таймер продуктивности Pomodoro</div>
+        <div class="af-item"><span>&#128202;</span> Аналитика по всем 5 метрикам + сравнение дней</div>
+        <div class="af-item"><span>&#127942;</span> Система достижений и мотивации</div>
+        <div class="af-item"><span>&#128203;</span> Подробный журнал всех событий</div>
+        <div class="af-item"><span>&#128276;</span> Умные алерты + Telegram Bot уведомления</div>
+        <div class="af-item"><span>&#129351;</span> Wellness Index — оценка условий 0–100</div>
+        <div class="af-item"><span>&#127775;</span> «Здоровый день» — интегральный индекс дня</div>
+        <div class="af-item"><span>&#127919;</span> Счёт продуктивности дня</div>
+        <div class="af-item"><span>&#128279;</span> Home Assistant REST API интеграция</div>
+        <div class="af-item"><span>&#128241;</span> PWA — установка как приложение</div>
+        <div class="af-item"><span>&#128438;</span> Экспорт CSV и печать PDF-отчёта</div>
+      </div>
+    </div>
+    <div class="about-arch">
+      <h3>Архитектура системы</h3>
+      <div class="arch-diagram">
+        <div class="arch-box esp">ESP32<br><small>Датчики + Прошивка C++</small></div>
+        <div class="arch-arrow">&#8594; REST API &#8594;</div>
+        <div class="arch-box flask">Python FastAPI<br><small>Сервер + SQLite</small></div>
+        <div class="arch-arrow">&#8594; WebSocket &#8594;</div>
+        <div class="arch-box web">Dashboard<br><small>HTML + JS + CSS</small></div>
+      </div>
+    </div>
+  </div>
+</div>

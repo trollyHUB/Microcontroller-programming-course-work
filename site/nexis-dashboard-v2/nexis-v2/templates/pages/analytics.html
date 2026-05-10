@@ -1,0 +1,146 @@
+<!-- ═══ СТРАНИЦА: АНАЛИТИКА ═══ -->
+<div class="page" id="page-analytics">
+  <div class="page-header">
+    <h1 class="page-title">&#128200; Аналитика</h1>
+    <p class="page-desc">Графики и статистика за выбранный период</p>
+  </div>
+  <div class="analytics-toolbar">
+    <div class="analytics-period-btns">
+      <button class="apb active" onclick="loadAnalytics(24);  this.closest('.analytics-period-btns').querySelectorAll('.apb').forEach(b=>b.classList.remove('active')); this.classList.add('active')">24 ч</button>
+      <button class="apb"        onclick="loadAnalytics(72);  this.closest('.analytics-period-btns').querySelectorAll('.apb').forEach(b=>b.classList.remove('active')); this.classList.add('active')">3 дня</button>
+      <button class="apb"        onclick="loadAnalytics(168); this.closest('.analytics-period-btns').querySelectorAll('.apb').forEach(b=>b.classList.remove('active')); this.classList.add('active')">7 дней</button>
+    </div>
+    <span class="analytics-status" id="analyticsStatus"></span>
+  </div>
+  <div class="analytics-chart-card">
+    <div class="card-header">
+      <span class="card-title" id="analyticsChartTitle">Температура</span>
+      <div class="chart-tabs" id="analyticsMetricTabs">
+        <button class="ctab active" data-am="temperature">Температура</button>
+        <button class="ctab" data-am="humidity">Влажность</button>
+        <button class="ctab" data-am="co2">CO₂</button>
+        <button class="ctab" data-am="light">Свет</button>
+        <button class="ctab" data-am="noise">Шум</button>
+      </div>
+    </div>
+    <div class="analytics-chart-wrap"><canvas id="analyticsChart"></canvas></div>
+  </div>
+  <div class="analytics-summary-card">
+    <div class="card-title">&#128202; Общая сводка за период</div>
+    <div class="analytics-summary-wrap">
+      <table class="summary-table" id="summaryTable">
+        <thead><tr><th>Параметр</th><th>Мин</th><th>Среднее</th><th>Макс</th><th>Статус</th></tr></thead>
+        <tbody id="summaryTableBody"><tr><td colspan="5" class="summary-empty">Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="analytics-stats-section">
+    <div class="card-title" style="margin-bottom:14px">Сводная статистика</div>
+    <div class="analytics-stats-grid" id="analyticsStatsGrid"></div>
+  </div>
+  <div class="analytics-chart-card" style="margin-top:20px">
+    <div class="card-header">
+      <span class="card-title">&#128197; Сегодня vs Вчера</span>
+      <div class="chart-tabs">
+        <button class="ctab active" onclick="loadAnalyticsComparison('temperature'); this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Температура</button>
+        <button class="ctab" onclick="loadAnalyticsComparison('co2');         this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">CO₂</button>
+        <button class="ctab" onclick="loadAnalyticsComparison('light');       this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Свет</button>
+        <button class="ctab" onclick="loadAnalyticsComparison('noise');       this.closest('.chart-tabs').querySelectorAll('.ctab').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Шум</button>
+      </div>
+    </div>
+    <div class="analytics-chart-wrap"><canvas id="comparisonChart"></canvas></div>
+  </div>
+  <div class="analytics-row-two">
+    <div class="analytics-streak-card">
+      <div class="card-title">&#128293; Серия дней</div>
+      <div class="analytics-streak-val" id="analytics-streak">&#128293; Серия: —</div>
+      <div class="analytics-streak-hint">Дни с &#8805;4 помидоро засчитываются</div>
+    </div>
+    <div class="analytics-week-comp-card">
+      <div class="card-header">
+        <span class="card-title">&#128198; Эта неделя vs прошлая</span>
+        <span class="week-comp-delta" id="week-comp-delta"></span>
+      </div>
+      <div class="analytics-chart-wrap" style="height:160px"><canvas id="week-comparison-chart"></canvas></div>
+    </div>
+  </div>
+  <div class="analytics-heatmap-card">
+    <div class="card-title">&#127919; Активность по часам и дням</div>
+    <div class="heatmap-wrap" id="heatmap-container"></div>
+  </div>
+  <div class="daily-digest-card">
+    <div class="daily-digest-info">
+      <div class="daily-digest-icon">&#128203;</div>
+      <div>
+        <div class="daily-digest-title">Дайджест дня</div>
+        <div class="daily-digest-desc">Краткая текстовая сводка по всем показателям за сегодня — для отчёта или дневника.</div>
+      </div>
+    </div>
+    <button class="daily-digest-btn" onclick="generateDailyDigest()">&#128203; Создать дайджест</button>
+  </div>
+  <div class="analytics-chart-card" style="margin-top:20px" id="correlation-section">
+    <div class="card-header">
+      <span class="card-title">&#128279; Среда → Продуктивность</span>
+      <div class="corr-metric-btns">
+        <button class="corr-metric-btn active" data-metric="co2">CO₂</button>
+        <button class="corr-metric-btn" data-metric="temperature">Температура</button>
+        <button class="corr-metric-btn" data-metric="humidity">Влажность</button>
+        <button class="corr-metric-btn" data-metric="noise">Шум</button>
+        <button class="corr-metric-btn" data-metric="light">Свет</button>
+      </div>
+    </div>
+    <div class="analytics-chart-wrap" style="height:280px"><canvas id="correlation-chart"></canvas></div>
+    <div class="correlation-msg" id="correlation-msg">Накапливаются данные для корреляционного анализа...</div>
+  </div>
+  <div class="severity-log-card">
+    <div class="card-header">
+      <span class="card-title">&#9888; Журнал аномалий</span>
+      <div class="severity-filter-row">
+        <span class="severity-filter-label">Мин. оценка:</span>
+        <select id="severity-filter" class="severity-filter-select" onchange="renderSeverityLog(parseInt(this.value))">
+          <option value="1">Все (≥1)</option>
+          <option value="4">Средние (≥4)</option>
+          <option value="7">Высокие (≥7)</option>
+        </select>
+      </div>
+    </div>
+    <div class="severity-legend">
+      <span class="sev-badge sev-badge-low">1–4</span> Слабые &nbsp;
+      <span class="sev-badge sev-badge-mid">5–7</span> Средние &nbsp;
+      <span class="sev-badge sev-badge-high">8–10</span> Критические
+    </div>
+    <div class="severity-log-list" id="severity-log-list">
+      <div class="no-alerts">Аномалии появятся при получении данных...</div>
+    </div>
+  </div>
+  <!-- Дайджест недели -->
+  <div class="week-digest-card">
+    <div class="card-title">&#128197; Дайджест недели</div>
+    <div class="week-digest-grid" id="week-digest-grid">
+      <div class="wdg-item"><div class="wdg-label">Лучший день</div><div class="wdg-val" id="wd-best-day">—</div></div>
+      <div class="wdg-item"><div class="wdg-label">Макс. Pomodoro</div><div class="wdg-val" id="wd-max-pomo">—</div></div>
+      <div class="wdg-item"><div class="wdg-label">Ср. Wellness</div><div class="wdg-val" id="wd-avg-wi">—</div></div>
+      <div class="wdg-item"><div class="wdg-label">Всего Pomodoro</div><div class="wdg-val" id="wd-total-pomo">—</div></div>
+      <div class="wdg-item"><div class="wdg-label">Дней активности</div><div class="wdg-val" id="wd-active-days">—</div></div>
+      <div class="wdg-item"><div class="wdg-label">Ср. CO₂</div><div class="wdg-val" id="wd-avg-co2">—</div></div>
+    </div>
+    <div class="week-heatmap-wrap">
+      <div class="wh-title">Тепловая карта продуктивности (7 дней)</div>
+      <div class="week-heatmap" id="week-heatmap"></div>
+    </div>
+  </div>
+
+  <div class="print-report-card">
+    <div class="print-report-info">
+      <div class="print-report-icon">&#128438;</div>
+      <div>
+        <div class="print-report-title">Отчёт по аналитике</div>
+        <div class="print-report-desc">Сохранить страницу как PDF или распечатать.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="print-report-btn" id="printReportBtn" onclick="printReport()"><span class="print-report-btn-icon">&#128438;</span><span>Печать / PDF</span></button>
+      <button class="print-report-btn" style="background:var(--red);border-color:var(--red)" onclick="generatePDFReport()"><span class="print-report-btn-icon">&#128196;</span><span>Скачать PDF-отчёт</span></button>
+    </div>
+  </div>
+</div>

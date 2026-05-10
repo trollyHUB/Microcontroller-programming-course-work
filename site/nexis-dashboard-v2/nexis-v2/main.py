@@ -285,6 +285,12 @@ def check_thresholds(data: SensorData) -> list:
     elif noise > THRESHOLDS['noise']['warn']:
         alerts.append({'level': 'warning', 'message': f"Шумно: {noise:.0f} dB"})
 
+    hum = data.humidity or 0
+    if hum > THRESHOLDS['humidity']['bad']:
+        alerts.append({'level': 'danger',  'message': f"Влажность критическая: {hum:.0f}%"})
+    elif hum > THRESHOLDS['humidity']['warn']:
+        alerts.append({'level': 'warning', 'message': f"Влажность повышена: {hum:.0f}%"})
+
     return alerts
 
 

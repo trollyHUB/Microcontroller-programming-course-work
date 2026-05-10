@@ -1,0 +1,83 @@
+<!-- ═══ СТРАНИЦА: ЗАДАЧИ ═══ -->
+<div class="page" id="page-tasks">
+  <div class="page-header">
+    <h1 class="page-title">&#9989; Задачи дня</h1>
+    <p class="page-desc">Список задач, оценка энергии и напоминания о разминке</p>
+  </div>
+  <div class="tasks-page-layout">
+    <div class="tasks-main">
+      <div class="tasks-card">
+        <div class="card-title">&#128221; Задачи на сегодня</div>
+        <div class="task-add-row">
+          <input type="text" id="task-input" class="task-input" placeholder="Новая задача... (Enter для добавления)" maxlength="200">
+          <button class="task-add-btn" id="task-add-btn">+ Добавить</button>
+        </div>
+        <div class="task-priority-row">
+          <span class="task-pri-label">Приоритет:</span>
+          <button class="task-pri-btn" data-priority="high" title="Высокий">🔴 Высокий</button>
+          <button class="task-pri-btn active" data-priority="medium" title="Средний">🟡 Средний</button>
+          <button class="task-pri-btn" data-priority="low" title="Низкий">🟢 Низкий</button>
+        </div>
+        <div class="task-progress-wrap">
+          <div class="task-progress-bar">
+            <div class="task-progress-fill" id="task-progress-fill" style="width:0%"></div>
+          </div>
+          <div class="task-progress-label" id="task-progress-label">0 / 0 задач выполнено</div>
+        </div>
+        <div class="task-list" id="task-list">
+          <div class="task-empty">Нет задач на сегодня. Добавьте первую!</div>
+        </div>
+        <div class="task-actions">
+          <button class="task-clear-btn" id="task-clear-done">&#128465; Очистить выполненные</button>
+        </div>
+      </div>
+    </div>
+    <div class="tasks-side">
+      <div class="tasks-card">
+        <div class="card-title">&#9889; Уровень энергии</div>
+        <div class="energy-stars" id="energy-stars">
+          <button class="energy-star" title="Истощён">&#9733;</button>
+          <button class="energy-star" title="Устал">&#9733;</button>
+          <button class="energy-star" title="Нормально">&#9733;</button>
+          <button class="energy-star" title="Хорошо">&#9733;</button>
+          <button class="energy-star" title="Отлично">&#9733;</button>
+        </div>
+        <div class="energy-label" id="energy-label">Оцените уровень энергии</div>
+        <div class="energy-hint">Обновляется каждый час. Помогает отслеживать продуктивность.</div>
+      </div>
+      <div class="tasks-card">
+        <div class="card-title">&#129336; Напоминание о разминке</div>
+        <p class="settings-hint">Уведомление появится через указанный интервал сидения за столом.</p>
+        <div class="stretch-row">
+          <span class="stretch-label">Интервал:</span>
+          <input type="number" id="stretch-interval-input" class="pomo-custom-input" min="10" max="180" value="60">
+          <span class="stretch-label">мин</span>
+        </div>
+        <div class="stretch-status" id="stretch-status">Напоминание активно</div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">&#128065; Защита глаз (20-20-20)</div>
+        <p class="settings-hint">Каждые 20 минут — напоминание посмотреть вдаль 20 секунд.</p>
+        <div class="stretch-row">
+          <label class="settings-label">Включить:</label>
+          <input type="checkbox" id="eye-strain-toggle" style="width:18px;height:18px;cursor:pointer">
+        </div>
+        <div class="stretch-row" style="margin-top:8px">
+          <span class="stretch-label">Интервал:</span>
+          <input type="number" id="eye-strain-interval" class="pomo-custom-input" min="5" max="60" value="20">
+          <span class="stretch-label">мин</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">&#128167; Гидратация</div>
+        <p class="settings-hint">Напоминание выпить стакан воды.</p>
+        <div class="stretch-row">
+          <span class="stretch-label">Интервал:</span>
+          <input type="number" id="hydration-interval-input" class="pomo-custom-input" min="10" max="180" value="45">
+          <span class="stretch-label">мин</span>
+          <button class="pomo-custom-btn" onclick="const v=parseInt(document.getElementById('hydration-interval-input').value)||45; localStorage.setItem('nexis-hydration-interval', v); toast.show('Интервал гидратации: ' + v + ' мин', 'info', 2000)">Применить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

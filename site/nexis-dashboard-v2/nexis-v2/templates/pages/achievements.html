@@ -1,0 +1,75 @@
+<!-- ═══ СТРАНИЦА: ДОСТИЖЕНИЯ ═══ -->
+<div class="page" id="page-achievements">
+  <div class="page-header">
+    <h1 class="page-title">&#127942; Достижения</h1>
+    <p class="page-desc">Прогресс по целям здоровья и продуктивности</p>
+  </div>
+
+  <!-- Общий прогресс -->
+  <div class="ach-overview">
+    <div class="ach-overview-score">
+      <div class="ach-total-num" id="ach-total-unlocked">0</div>
+      <div class="ach-total-label">из <span id="ach-total-count">0</span> получено</div>
+    </div>
+    <div class="ach-overview-bar-wrap">
+      <div class="ach-overview-title">Общий прогресс</div>
+      <div class="ach-overview-bar-track">
+        <div class="ach-overview-bar-fill" id="ach-overview-bar" style="width:0%"></div>
+      </div>
+      <div class="ach-overview-pct" id="ach-overview-pct">0%</div>
+    </div>
+    <div class="ach-overview-streak">
+      <div class="ach-streak-num" id="ach-streak-days">0</div>
+      <div class="ach-streak-label">дней подряд</div>
+    </div>
+  </div>
+
+  <!-- Категории достижений -->
+  <div class="ach-categories">
+
+    <!-- Здоровье -->
+    <div class="ach-category-card">
+      <div class="ach-cat-title">&#127973; Здоровье</div>
+      <div class="ach-list" id="ach-list-health"></div>
+    </div>
+
+    <!-- Продуктивность -->
+    <div class="ach-category-card">
+      <div class="ach-cat-title">&#9889; Продуктивность</div>
+      <div class="ach-list" id="ach-list-productivity"></div>
+    </div>
+
+    <!-- Среда -->
+    <div class="ach-category-card">
+      <div class="ach-cat-title">&#127807; Среда</div>
+      <div class="ach-list" id="ach-list-environment"></div>
+    </div>
+
+    <!-- Стабильность -->
+    <div class="ach-category-card">
+      <div class="ach-cat-title">&#128293; Стабильность</div>
+      <div class="ach-list" id="ach-list-streak"></div>
+    </div>
+
+    <!-- Ежедневные -->
+    <div class="ach-category-card ach-category-daily">
+      <div class="ach-cat-title">&#9201; Ежедневные <span class="ach-cat-reset-hint">&#8635; сбрасываются в полночь</span></div>
+      <div class="ach-list" id="ach-list-daily"></div>
+    </div>
+
+    <!-- Недельные -->
+    <div class="ach-category-card ach-category-weekly">
+      <div class="ach-cat-title">&#128197; Недельные <span class="ach-cat-reset-hint">&#8635; сбрасываются в понедельник</span></div>
+      <div class="ach-list" id="ach-list-weekly"></div>
+    </div>
+
+  </div>
+
+  <!-- Недавно полученные -->
+  <div class="ach-recent-card">
+    <div class="card-title">&#127881; Недавно получено</div>
+    <div class="ach-recent-list" id="ach-recent-list">
+      <div class="no-alerts">Получите первое достижение!</div>
+    </div>
+  </div>
+</div>

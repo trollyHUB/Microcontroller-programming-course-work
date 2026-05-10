@@ -1,0 +1,263 @@
+<!-- ═══ СТРАНИЦА: DASHBOARD ═══ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-desc">Общий мониторинг рабочей среды в реальном времени</p>
+  </div>
+
+  <!-- Плитки датчиков -->
+  <div class="sensor-tiles">
+    <div class="tile clickable" data-goto="sensor-temp" id="tile-temp">
+      <div class="tile-top"><span class="tile-icon">&#127777;</span><span class="tile-label">Температура</span></div>
+      <div class="tile-value"><span id="d-temp">--</span><span class="tile-unit" id="tu-unit">°C</span></div>
+      <div class="tile-status" id="ds-temp">--</div>
+      <div class="tile-humidex" id="humidex-val"></div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-temp"></div></div>
+      <div class="spark-wrap"><canvas id="spark-temp"></canvas></div>
+    </div>
+    <div class="tile clickable" data-goto="sensor-hum" id="tile-hum">
+      <div class="tile-top"><span class="tile-icon">&#128167;</span><span class="tile-label">Влажность</span></div>
+      <div class="tile-value"><span id="d-hum">--</span><span class="tile-unit">%</span></div>
+      <div class="tile-status" id="ds-hum">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-hum"></div></div>
+      <div class="spark-wrap"><canvas id="spark-hum"></canvas></div>
+    </div>
+    <div class="tile clickable" data-goto="sensor-co2" id="tile-co2">
+      <div class="tile-top"><span class="tile-icon">&#127807;</span><span class="tile-label">CO₂ / Воздух</span></div>
+      <div class="tile-value"><span id="d-co2">--</span><span class="tile-unit">ppm</span></div>
+      <div class="tile-status" id="ds-co2">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-co2"></div></div>
+      <div class="spark-wrap"><canvas id="spark-co2"></canvas></div>
+    </div>
+    <div class="tile clickable" data-goto="sensor-light" id="tile-light">
+      <div class="tile-top"><span class="tile-icon">&#128161;</span><span class="tile-label">Освещённость</span></div>
+      <div class="tile-value"><span id="d-light">--</span><span class="tile-unit">lux</span></div>
+      <div class="tile-status" id="ds-light">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-light"></div></div>
+      <div class="spark-wrap"><canvas id="spark-light"></canvas></div>
+    </div>
+    <div class="tile clickable" data-goto="sensor-noise" id="tile-noise">
+      <div class="tile-top"><span class="tile-icon">&#128266;</span><span class="tile-label">Уровень шума</span></div>
+      <div class="tile-value"><span id="d-noise">--</span><span class="tile-unit">dB</span></div>
+      <div class="tile-status" id="ds-noise">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-noise"></div></div>
+      <div class="spark-wrap"><canvas id="spark-noise"></canvas></div>
+    </div>
+    <div class="tile clickable" data-goto="sensor-motion" id="tile-motion">
+      <div class="tile-top"><span class="tile-icon">&#128100;</span><span class="tile-label">Присутствие</span></div>
+      <div class="tile-value-text" id="d-motion">--</div>
+      <div class="tile-status" id="ds-motion">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-motion"></div></div>
+    </div>
+    <div class="tile clickable pressure-tile" data-goto="sensor-pressure" id="tile-pressure">
+      <div class="tile-top"><span class="tile-icon">&#127966;</span><span class="tile-label">Давление</span></div>
+      <div class="tile-value"><span id="d-pressure">--</span><span class="tile-unit">hPa</span></div>
+      <div class="tile-status" id="ds-pressure">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-pressure"></div></div>
+    </div>
+    <div class="tile wci-tile ok" id="tile-wci">
+      <div class="tile-top"><span class="tile-icon">&#127975;</span><span class="tile-label">Условия работы</span></div>
+      <div class="tile-value"><span id="d-wci">--</span></div>
+      <div class="tile-status" id="ds-wci">--</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-wci"></div></div>
+    </div>
+    <div class="tile worktime-tile" id="tile-worktime">
+      <div class="tile-top"><span class="tile-icon">&#9201;</span><span class="tile-label">За столом</span></div>
+      <div class="tile-value-text" id="d-worktime">--</div>
+      <div class="tile-status" id="ds-worktime">Сегодня</div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="db-worktime"></div></div>
+    </div>
+  </div>
+
+  <!-- Wellness Strip -->
+  <div class="wellness-strip">
+    <div class="ws-score-wrap">
+      <span class="ws-score" id="wellness-index">--</span>
+      <span class="ws-max">/100</span>
+    </div>
+    <div class="ws-center">
+      <div class="ws-label-row">
+        <span class="ws-badge" id="wellness-label">—</span>
+        <span class="ws-title">Wellness Index</span>
+      </div>
+      <div class="ws-bar-track"><div class="ws-bar-fill" id="wellness-bar"></div></div>
+    </div>
+    <div class="ws-components">
+      <div class="ws-comp" title="CO₂ / Воздух"><span class="ws-dot" id="wc-bar-air"></span><span class="ws-comp-lbl">CO₂</span><span class="ws-comp-val" id="wc-val-air">--</span></div>
+      <div class="ws-comp" title="Температура"><span class="ws-dot" id="wc-bar-temperature"></span><span class="ws-comp-lbl">Темп</span><span class="ws-comp-val" id="wc-val-temperature">--</span></div>
+      <div class="ws-comp" title="Влажность"><span class="ws-dot" id="wc-bar-humidity"></span><span class="ws-comp-lbl">Влаж</span><span class="ws-comp-val" id="wc-val-humidity">--</span></div>
+      <div class="ws-comp" title="Освещённость"><span class="ws-dot" id="wc-bar-light"></span><span class="ws-comp-lbl">Свет</span><span class="ws-comp-val" id="wc-val-light">--</span></div>
+      <div class="ws-comp" title="Шум"><span class="ws-dot" id="wc-bar-noise"></span><span class="ws-comp-lbl">Шум</span><span class="ws-comp-val" id="wc-val-noise">--</span></div>
+      <span class="iaq-badge" id="iaq-badge">IAQ: —</span>
+    </div>
+  </div>
+
+  <!-- ★ НОВОЕ: Здоровый день — индекс качества дня -->
+  <div class="day-score-card" id="day-score-card">
+    <div class="day-score-left">
+      <div class="day-score-icon">&#127775;</div>
+      <div class="day-score-info">
+        <div class="day-score-title">Здоровый день</div>
+        <div class="day-score-desc" id="day-score-desc">Накапливаются данные...</div>
+      </div>
+    </div>
+    <div class="day-score-center">
+      <div class="day-score-bars">
+        <div class="dsb-item">
+          <div class="dsb-label">Среда</div>
+          <div class="dsb-track"><div class="dsb-fill dsb-env" id="dsb-env" style="width:0%"></div></div>
+          <div class="dsb-val" id="dsb-env-val">--%</div>
+        </div>
+        <div class="dsb-item">
+          <div class="dsb-label">Pomodoro</div>
+          <div class="dsb-track"><div class="dsb-fill dsb-pomo" id="dsb-pomo" style="width:0%"></div></div>
+          <div class="dsb-val" id="dsb-pomo-val">--%</div>
+        </div>
+        <div class="dsb-item">
+          <div class="dsb-label">Фокус</div>
+          <div class="dsb-track"><div class="dsb-fill dsb-focus" id="dsb-focus" style="width:0%"></div></div>
+          <div class="dsb-val" id="dsb-focus-val">--%</div>
+        </div>
+      </div>
+    </div>
+    <div class="day-score-right">
+      <div class="day-score-num" id="day-score-num">--</div>
+      <div class="day-score-max">/100</div>
+      <div class="day-score-grade" id="day-score-grade">—</div>
+    </div>
+  </div>
+
+  <!-- Умные рекомендации -->
+  <div class="recommendations-card">
+    <div class="card-title">&#128161; Рекомендации</div>
+    <div class="recommendations-panel" id="recommendations-panel">
+      <div class="rec-item rec-ok"><span class="rec-icon">✅</span><span class="rec-text">Загрузка данных...</span></div>
+    </div>
+  </div>
+
+  <!-- График + Pomodoro мини -->
+  <div class="dash-mid">
+    <div class="dash-chart-card">
+      <div class="card-header">
+        <span class="card-title">График за 24 часа</span>
+        <div class="chart-tabs">
+          <button class="ctab active" data-m="temperature">Температура</button>
+          <button class="ctab" data-m="humidity">Влажность</button>
+          <button class="ctab" data-m="co2">CO₂</button>
+          <button class="ctab" data-m="light">Свет</button>
+          <button class="ctab" data-m="noise">Шум</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+    </div>
+    <div class="dash-pomo-card">
+      <div class="card-title">&#127813; Pomodoro</div>
+      <div class="mini-pomo-timer" id="miniPomoTimer">25:00</div>
+      <div class="mini-pomo-phase" id="miniPomoPhase">Готов к работе</div>
+      <div class="mini-pomo-dots" id="miniPomoDots"></div>
+      <div class="mini-pomo-btns">
+        <button class="btn-start" id="miniPomoStart" onclick="pomodoro.toggle()">▶ Старт</button>
+      </div>
+      <div class="mini-pomo-stats">
+        <div class="mps"><span id="miniPomoCycles">0</span><small>Сегодня</small></div>
+        <div class="mps"><span id="miniPomoMins">0</span><small>Минут</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Статистика + алерты -->
+  <div class="dash-bottom">
+    <div class="stats-card">
+      <div class="card-title">&#128202; Статистика за сегодня</div>
+      <div class="stats-grid">
+        <div class="stat-box"><span id="st-avgTemp">--</span><small>Ср. T°</small></div>
+        <div class="stat-box"><span id="st-avgHum">--</span><small>Ср. влажность</small></div>
+        <div class="stat-box"><span id="st-avgCo2">--</span><small>Ср. CO₂</small></div>
+        <div class="stat-box"><span id="st-maxCo2">--</span><small>Макс CO₂</small></div>
+        <div class="stat-box"><span id="st-pomo">--</span><small>Pomodoro</small></div>
+        <div class="stat-box"><span id="st-readings">--</span><small>Измерений</small></div>
+      </div>
+    </div>
+    <div class="alerts-card">
+      <div class="card-title">&#128276; Уведомления</div>
+      <div class="alerts-list" id="dashAlerts"><div class="no-alerts">Нет уведомлений</div></div>
+    </div>
+  </div>
+
+  <!-- Прогноз CO₂ + Гидратация -->
+  <div class="dash-health-row">
+    <div class="forecast-card">
+      <div class="card-title">&#128203; Прогноз CO₂</div>
+      <div class="forecast-body">
+        <div class="forecast-vals">
+          <div class="forecast-val-item">
+            <div class="forecast-val-num" id="co2-forecast-30">--</div>
+            <div class="forecast-val-label">через 30 мин</div>
+          </div>
+          <div class="forecast-trend" id="co2-forecast-trend">→</div>
+          <div class="forecast-val-item">
+            <div class="forecast-val-num" id="co2-forecast-60">--</div>
+            <div class="forecast-val-label">через 60 мин</div>
+          </div>
+        </div>
+        <div class="forecast-msg" id="co2-forecast-msg">Накапливаются данные...</div>
+      </div>
+    </div>
+    <div class="hydration-card">
+      <div class="card-title">&#128167; Гидратация</div>
+      <div class="hydration-body">
+        <div class="hydration-top">
+          <div class="hydration-count-wrap">
+            <span class="hydration-count" id="hydration-count">0</span>
+            <span class="hydration-goal-lbl" id="hydration-goal">8 стак.</span>
+          </div>
+          <button class="hydration-add-btn" id="hydration-add-btn" title="Выпил стакан воды">+💧</button>
+        </div>
+        <div class="hydration-bar-track">
+          <div class="hydration-bar-fill" id="hydration-bar-fill" style="width:0%"></div>
+        </div>
+        <div class="hydration-label" id="hydration-label">0 / 8 стаканов (0%)</div>
+        <div class="hydration-hint" id="hydration-hint">Пейте больше воды</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Циркадный индекс + Барокомфорт -->
+  <div class="dash-health-row" style="margin-top:0">
+    <div class="circadian-card">
+      <div class="card-title">&#9728; Циркадный световой индекс</div>
+      <div class="circadian-body">
+        <div class="circadian-score-wrap">
+          <span class="circadian-score" id="circadian-score">--</span>
+          <span class="circadian-max">/100</span>
+        </div>
+        <div class="circadian-rec" id="circadian-rec">Загрузка...</div>
+      </div>
+    </div>
+    <div class="pressure-comfort-card">
+      <div class="card-title">&#127966; Барокомфорт</div>
+      <div class="pressure-comfort-body">
+        <div class="pressure-comfort-msg" id="pressure-comfort-msg">Накапливаются данные о давлении...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wellness Index за 7 дней -->
+  <div class="wi-history-card">
+    <div class="card-header">
+      <span class="card-title">&#127775; Wellness Index — 7 дней</span>
+      <span class="wi-history-summary" id="wi-history-summary"></span>
+    </div>
+    <div class="wi-history-wrap" id="wi-history-wrap">
+      <canvas id="wi-history-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Быстрые действия Dashboard -->
+  <div class="dash-quick-actions">
+    <button class="dqa-btn" onclick="exportDayPDF()">&#128196; PDF-отчёт дня</button>
+    <button class="dqa-btn" onclick="doExport()">&#11015; CSV данных</button>
+    <button class="dqa-btn" onclick="navigateTo('achievements')">&#127942; Достижения</button>
+    <button class="dqa-btn" onclick="navigateTo('analytics')">&#128200; Аналитика</button>
+  </div>
+</div>

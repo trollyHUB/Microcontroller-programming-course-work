@@ -103,6 +103,19 @@ uint32_t lastZM106Read    = 0;
 uint32_t lastWifiCheck    = 0;
 
 // ============================================================
+//  ISR — ПРЕРЫВАНИЯ (IRAM_ATTR — код в IRAM для быстрого доступа)
+// ============================================================
+
+volatile bool isrBtnMode  = false;  // флаг нажатия кнопки MODE
+volatile bool isrBtnOK    = false;  // флаг нажатия кнопки OK
+volatile bool isrPIR      = false;  // флаг срабатывания PIR
+
+// ISR-обработчики — вызываются аппаратно, только устанавливают флаг
+void IRAM_ATTR onBtnMode() { isrBtnMode = true; }
+void IRAM_ATTR onBtnOK()   { isrBtnOK   = true; }
+void IRAM_ATTR onPIR()     { isrPIR     = true; }
+
+// ============================================================
 //  ZM106-VOC — UART ПРОТОКОЛ WINSEN
 // ============================================================
 
@@ -329,7 +342,13 @@ void readNoise() {
 }
 
 void readPIR() {
-    sensors.motion = (digitalRead(PIN_PIR) == HIGH);
+    // ISR-флаг фиксирует движение мгновенно; polling как резерв для текущего состояния
+    if (isrPIR) {
+        sensors.motion = true;
+        isrPIR = false;
+    } else {
+        sensors.motion = (digitalRead(PIN_PIR) == HIGH);
+    }
 }
 
 void readMQ135() {
@@ -362,15 +381,33 @@ AlertLevel checkThresholds() {
         }
     }
 
+    if (!isnan(sensors.humidity)) {
+        if (sensors.humidity > THRESH_HUM_DANGER) {
+            level = ALERT_DANGER;
+            state.alertMessage = "HUMIDITY CRITICAL!";
+        } else if (sensors.humidity > THRESH_HUM_WARN && level < ALERT_WARN) {
+            level = ALERT_WARN;
+            if (state.alertMessage.isEmpty()) state.alertMessage = "Humidity high";
+        }
+    }
+
     if (!isnan(sensors.light) && sensors.light > 0) {
         if (sensors.light < THRESH_LIGHT_DANGER) {
-            if (level < ALERT_DANGER) level = ALERT_WARN;
+            level = ALERT_DANGER;
+            state.alertMessage = "LIGHT TOO LOW!";
+        } else if (sensors.light < THRESH_LIGHT_WARN && level < ALERT_WARN) {
+            level = ALERT_WARN;
+            if (state.alertMessage.isEmpty()) state.alertMessage = "Light low";
         }
     }
 
     if (!isnan(sensors.noise)) {
         if (sensors.noise > THRESH_NOISE_DANGER) {
-            if (level < ALERT_DANGER) level = ALERT_WARN;
+            level = ALERT_DANGER;
+            state.alertMessage = "NOISE TOO HIGH!";
+        } else if (sensors.noise > THRESH_NOISE_WARN && level < ALERT_WARN) {
+            level = ALERT_WARN;
+            if (state.alertMessage.isEmpty()) state.alertMessage = "Noise elevated";
         }
     }
 
@@ -537,16 +574,18 @@ const uint32_t DEBOUNCE_MS = 200;
 void handleButtons() {
     uint32_t now = millis();
 
-    // Кнопка MODE — смена экрана
-    if (digitalRead(PIN_BTN_MODE) == LOW && now - btnModeLast > DEBOUNCE_MS) {
+    // Кнопка MODE — ISR-флаг зафиксировал нажатие, debounce защищает от дребезга
+    if (isrBtnMode && now - btnModeLast > DEBOUNCE_MS) {
+        isrBtnMode = false;
         btnModeLast = now;
         state.displayPage = (state.displayPage + 1) % SystemState::DISPLAY_PAGES;
         updateDisplay();
         beepOK();
     }
 
-    // Кнопка OK — запуск/остановка Pomodoro
-    if (digitalRead(PIN_BTN_OK) == LOW && now - btnOKLast > DEBOUNCE_MS) {
+    // Кнопка OK — запуск/остановка Pomodoro через прерывание
+    if (isrBtnOK && now - btnOKLast > DEBOUNCE_MS) {
+        isrBtnOK = false;
         btnOKLast = now;
         if (state.pomoMode == SystemState::POMO_IDLE) {
             pomoStart();
@@ -572,6 +611,14 @@ void setup() {
     pinMode(PIN_LED_G,    OUTPUT);
     pinMode(PIN_LED_B,    OUTPUT);
     pinMode(PIN_BUZZER,   OUTPUT);
+
+    // Регистрация аппаратных прерываний
+    // FALLING — кнопки с INPUT_PULLUP: нажатие = HIGH→LOW
+    attachInterrupt(digitalPinToInterrupt(PIN_BTN_MODE), onBtnMode, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_BTN_OK),   onBtnOK,   FALLING);
+    // RISING — PIR выдаёт HIGH при обнаружении движения
+    attachInterrupt(digitalPinToInterrupt(PIN_PIR),      onPIR,     RISING);
+    Serial.println("[OK] Hardware interrupts attached (BTN_MODE, BTN_OK, PIR)");
 
     analogReadResolution(12);   // ADC 12 бит (0–4095)
     analogSetAttenuation(ADC_11db); // Входной диапазон 0–3.3V

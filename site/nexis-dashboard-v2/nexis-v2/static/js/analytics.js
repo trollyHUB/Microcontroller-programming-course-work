@@ -187,14 +187,85 @@ window.loadAnalyticsComparison = loadAnalyticsComparison;
 
 
 function clearSensorDisplay() {
+  // Плитки датчиков
   ['temp','hum','co2','light','noise'].forEach(k => {
-    const el = document.getElementById(`d-${k}`);
-    if (el) el.textContent = '--';
-    const el2 = document.getElementById(`ds-${k}`);
-    if (el2) el2.textContent = '--';
+    const dVal = document.getElementById(`d-${k}`);
+    if (dVal) dVal.textContent = '--';
+    const dSt = document.getElementById(`ds-${k}`);
+    if (dSt) dSt.textContent = '--';
     const tile = document.getElementById(`tile-${k}`);
     if (tile) tile.className = 'tile clickable';
+    const bar = document.getElementById(`db-${k}`);
+    if (bar) bar.style.width = '0%';
+    const nb = document.getElementById(`nb-${k}`);
+    if (nb) nb.textContent = '--';
   });
+
+  // Движение и давление
+  const motion = document.getElementById('d-motion');   if (motion)   motion.textContent = '--';
+  const pressure = document.getElementById('d-pressure'); if (pressure) pressure.textContent = '--';
+  const dsPressure = document.getElementById('ds-pressure'); if (dsPressure) dsPressure.textContent = '--';
+  const dMotion = document.getElementById('ds-motion');  if (dMotion)  dMotion.textContent = '--';
+
+  // Wellness Index
+  const wi = document.getElementById('wellness-index');
+  if (wi) { wi.textContent = '--'; wi.style.color = ''; }
+  const wiBar = document.getElementById('wellness-bar');
+  if (wiBar) { wiBar.style.width = '0%'; wiBar.style.background = ''; }
+  const wiLabel = document.getElementById('wellness-label');
+  if (wiLabel) { wiLabel.textContent = '—'; wiLabel.dataset.level = ''; }
+  ['air','temperature','humidity','light','noise'].forEach(k => {
+    const dot = document.getElementById(`wc-bar-${k}`);
+    if (dot) dot.style.background = 'var(--text3)';
+    const val = document.getElementById(`wc-val-${k}`);
+    if (val) val.textContent = '--';
+  });
+  const iaq = document.getElementById('iaq-badge');
+  if (iaq) iaq.textContent = 'IAQ: —';
+
+  // Day Score
+  const dsNum = document.getElementById('day-score-num');   if (dsNum)   dsNum.textContent = '--';
+  const dsGrade = document.getElementById('day-score-grade'); if (dsGrade) { dsGrade.textContent = '—'; dsGrade.className = 'day-score-grade'; }
+  ['env','pomo','focus'].forEach(k => {
+    const fill = document.getElementById(`dsb-${k}`);  if (fill)  fill.style.width = '0%';
+    const val  = document.getElementById(`dsb-${k}-val`); if (val) val.textContent = '--%';
+  });
+
+  // Статистика дня
+  ['st-avgTemp','st-avgHum','st-avgCo2','st-maxCo2','st-pomo','st-readings'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '--';
+  });
+
+  // Рекомендации
+  const rec = document.getElementById('recommendations-panel');
+  if (rec) {
+    rec.textContent = '';
+    const item = document.createElement('div');
+    item.className = 'rec-item rec-ok';
+    const ico = document.createElement('span'); ico.className = 'rec-icon'; ico.textContent = '⏸';
+    const txt = document.createElement('span'); txt.className = 'rec-text'; txt.textContent = 'Режим отключён — данных нет';
+    item.appendChild(ico); item.appendChild(txt);
+    rec.appendChild(item);
+  }
+
+  // Мини-Pomodoro таймер не сбрасываем — он независим
+
+  // WCI / За столом
+  const wci = document.getElementById('d-wci');      if (wci)  wci.textContent = '--';
+  const wt  = document.getElementById('d-worktime'); if (wt)   wt.textContent = '--';
+
+  // Spark-charts — обнулить данные
+  if (typeof sparkData !== 'undefined') {
+    Object.keys(sparkData).forEach(k => { sparkData[k] = []; });
+    if (typeof sparkCharts !== 'undefined') {
+      Object.entries(sparkCharts).forEach(([k, ch]) => {
+        if (ch) { ch.data.labels = []; ch.data.datasets[0].data = []; ch.update('none'); }
+      });
+    }
+  }
+
+  // Сбросить state.sensors
+  state.sensors = {};
 }
 
 
@@ -997,3 +1068,114 @@ function generatePDFReport() {
 }
 
 window.generatePDFReport = generatePDFReport;
+
+// ──────────────────────────────────────────────────
+// ДАЙДЖЕСТ НЕДЕЛИ + ТЕПЛОВАЯ КАРТА
+// ──────────────────────────────────────────────────
+window.renderWeekDigest = function renderWeekDigest(rows) {
+  if (!rows || !rows.length) return;
+
+  const totalPomo = rows.reduce((s, r) => s + (r.pomodoros || 0), 0);
+  const maxPomo   = Math.max(...rows.map(r => r.pomodoros || 0));
+  const bestDay   = rows.find(r => r.pomodoros === maxPomo);
+  const activeDays = rows.filter(r => (r.pomodoros || 0) > 0).length;
+
+  const fmt = id => { const el = document.getElementById(id); if (el) el.textContent = arguments[1]; };
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+  if (bestDay) {
+    const d = new Date(bestDay.day);
+    set('wd-best-day', d.toLocaleDateString('ru', { weekday: 'short', day: 'numeric', month: 'short' }));
+  }
+  set('wd-max-pomo',    maxPomo + ' 🍅');
+  set('wd-total-pomo',  totalPomo + ' 🍅');
+  set('wd-active-days', activeDays + ' / 7');
+
+  // Средний Wellness из chartData
+  if (state.chartData && state.chartData.length) {
+    const wiVals = state.chartData.map(p => p.full?.wellness).filter(v => v != null);
+    if (wiVals.length) {
+      const avgWI = Math.round(wiVals.reduce((a, b) => a + b, 0) / wiVals.length);
+      set('wd-avg-wi', avgWI);
+    }
+  } else {
+    set('wd-avg-wi', '--');
+  }
+
+  // Средний CO₂ из chartData
+  if (state.chartData && state.chartData.length) {
+    const co2Vals = state.chartData.map(p => p.full?.co2).filter(v => v != null);
+    if (co2Vals.length) {
+      const avgCO2 = Math.round(co2Vals.reduce((a, b) => a + b, 0) / co2Vals.length);
+      set('wd-avg-co2', avgCO2 + ' ppm');
+    }
+  } else {
+    set('wd-avg-co2', '--');
+  }
+
+  renderWeekHeatmap(rows);
+}
+
+window.renderWeekHeatmap = function renderWeekHeatmap(rows) {
+  const container = document.getElementById('week-heatmap');
+  if (!container) return;
+  container.textContent = '';
+
+  const maxPomo = Math.max(1, ...rows.map(r => r.pomodoros || 0));
+
+  rows.forEach(r => {
+    const pomo = r.pomodoros || 0;
+    const intensity = pomo / maxPomo;
+    const d = new Date(r.day);
+    const dayName = d.toLocaleDateString('ru', { weekday: 'short' });
+    const dayNum  = d.toLocaleDateString('ru', { day: 'numeric', month: 'short' });
+
+    const cell = document.createElement('div');
+    cell.className = 'wh-cell';
+
+    // Цвет по интенсивности
+    const alpha = 0.12 + intensity * 0.75;
+    cell.style.background = pomo === 0
+      ? 'var(--bg3)'
+      : `rgba(77,158,255,${alpha.toFixed(2)})`;
+    cell.style.borderColor = pomo > 0 ? `rgba(77,158,255,${(alpha + 0.2).toFixed(2)})` : 'var(--border)';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'wh-day-name';
+    nameEl.textContent = dayName;
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'wh-day-date';
+    dateEl.textContent = dayNum;
+
+    const countEl = document.createElement('div');
+    countEl.className = 'wh-pomo-count';
+    countEl.textContent = pomo > 0 ? pomo + ' 🍅' : '—';
+
+    cell.appendChild(nameEl);
+    cell.appendChild(dateEl);
+    cell.appendChild(countEl);
+    cell.title = dayName + ' ' + dayNum + ': ' + pomo + ' помидоров';
+    container.appendChild(cell);
+  });
+}
+
+// Хук в loadWeeklyStats — вызываем дайджест после загрузки данных
+const _origLoadWeeklyStats = loadWeeklyStats;
+loadWeeklyStats = function() {
+  _origLoadWeeklyStats();
+  // Для demo — повторяем с теми же данными
+  if (state.mode === 'demo') {
+    const today = new Date();
+    const rows = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() - (6 - i));
+      return { day: d.toISOString().slice(0, 10), pomodoros: [2,4,3,5,4,6,3][i] || 0 };
+    });
+    renderWeekDigest(rows);
+  } else {
+    fetch('/api/stats/week').then(r => r.json()).then(rows => {
+      if (Array.isArray(rows)) renderWeekDigest(rows);
+    }).catch(() => {});
+  }
+};
+window.loadWeeklyStats = loadWeeklyStats;
