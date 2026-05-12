@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-11T00:00:00.000Z" version="21.0.0">
+  <diagram name="NEXIS Схема" id="nexis-circuit-1">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ЗАГОЛОВОК                                       -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="title" value="NEXIS Wellness Station &amp;mdash; Функциональная схема подключения компонентов к ESP32 DevKit V1"
+          style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="140" y="20" width="1000" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ESP32 DevKit V1 — центральный блок              -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="esp32" value="&lt;b&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;ESP32 DevKit V1&lt;/font&gt;&lt;/b&gt;&lt;br&gt;Xtensa LX6 dual-core 240 МГц&lt;br&gt;520 КБ SRAM | Wi-Fi 802.11 b/g/n&lt;br&gt;&lt;br&gt;&lt;b&gt;I2C:&lt;/b&gt; SDA=GPIO21, SCL=GPIO22&lt;br&gt;&lt;b&gt;UART2:&lt;/b&gt; RX=GPIO16, TX=GPIO17&lt;br&gt;&lt;b&gt;ADC1:&lt;/b&gt; GPIO36 (MQ-135), GPIO39 (KY-037)&lt;br&gt;&lt;b&gt;GPIO:&lt;/b&gt; 4(DHT11), 27(PIR)&lt;br&gt;&lt;b&gt;GPIO:&lt;/b&gt; 32(MODE), 33(OK)&lt;br&gt;&lt;b&gt;GPIO:&lt;/b&gt; 13(R), 12(G), 14(B), 25(Buzz)&lt;br&gt;&lt;br&gt;Питание: 5V USB"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;fontStyle=0;verticalAlign=middle;arcSize=5;"
+          vertex="1" parent="1">
+          <mxGeometry x="430" y="270" width="270" height="310" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- I2C ШИНА — промежуточный узел                  -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <mxCell id="i2cbus" value="&lt;b&gt;I2C ШИНА&lt;/b&gt;&lt;br&gt;SDA = GPIO21&lt;br&gt;SCL = GPIO22&lt;br&gt;100 кбит/с"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="240" y="355" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ЛЕВАЯ СТОРОНА — I2C устройства                 -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- BME280 -->
+        <mxCell id="bme280" value="&lt;b&gt;BME280&lt;/b&gt;&lt;br&gt;Bosch Sensortec&lt;br&gt;Температура ±1°C&lt;br&gt;Влажность ±3%&lt;br&gt;Давление ±1 hPa&lt;br&gt;I2C адрес: 0x76&lt;br&gt;&lt;font color=&quot;#006600&quot;&gt;Питание: 3.3V&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="30" y="180" width="165" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- BH1750 -->
+        <mxCell id="bh1750" value="&lt;b&gt;BH1750&lt;/b&gt;&lt;br&gt;ROHM Semiconductor&lt;br&gt;Освещённость&lt;br&gt;1 – 65535 лк (16-бит)&lt;br&gt;I2C адрес: 0x23&lt;br&gt;&lt;font color=&quot;#006600&quot;&gt;Питание: 3.3V&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="30" y="340" width="165" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- LCD 1602 -->
+        <mxCell id="lcd1602" value="&lt;b&gt;LCD 1602 + PCF8574&lt;/b&gt;&lt;br&gt;16 × 2 символов&lt;br&gt;I2C адрес: 0x27&lt;br&gt;&lt;font color=&quot;#CC0000&quot;&gt;&lt;b&gt;Питание: 5V !&lt;/b&gt;&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="30" y="490" width="165" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ПРАВАЯ СТОРОНА — UART                          -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- ZM106-VOC -->
+        <mxCell id="zm106" value="&lt;b&gt;Winsen ZM106-VOC&lt;/b&gt;&lt;br&gt;CO&#8322; / VOC сенсор&lt;br&gt;Диапазон: 0 – 5000 ppm&lt;br&gt;UART 9600 бод (8N1)&lt;br&gt;RX-датч. → GPIO17 (TX ESP32)&lt;br&gt;TX-датч. → GPIO16 (RX ESP32)&lt;br&gt;&lt;font color=&quot;#CC0000&quot;&gt;&lt;b&gt;Питание: 5V !&lt;/b&gt;&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;strokeWidth=2;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="780" y="310" width="190" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ВЕРХ — Управление и индикация                  -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- Кнопка MODE -->
+        <mxCell id="btnMode" value="&lt;b&gt;Кнопка MODE&lt;/b&gt;&lt;br&gt;GPIO32&lt;br&gt;INPUT_PULLUP&lt;br&gt;ISR: FALLING edge&lt;br&gt;Debounce: 200 мс"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="260" y="80" width="150" height="85" as="geometry" />
+        </mxCell>
+
+        <!-- Кнопка OK -->
+        <mxCell id="btnOK" value="&lt;b&gt;Кнопка OK&lt;/b&gt;&lt;br&gt;GPIO33&lt;br&gt;INPUT_PULLUP&lt;br&gt;ISR: FALLING edge&lt;br&gt;Pomodoro START/STOP"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="430" y="80" width="150" height="85" as="geometry" />
+        </mxCell>
+
+        <!-- RGB LED -->
+        <mxCell id="rgbLed" value="&lt;b&gt;RGB LED&lt;/b&gt;&lt;br&gt;R = GPIO13 [220 Ом]&lt;br&gt;G = GPIO12 [220 Ом]&lt;br&gt;B = GPIO14 [220 Ом]&lt;br&gt;&lt;font color=&quot;#006600&quot;&gt;Питание: 3.3V&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="600" y="70" width="155" height="95" as="geometry" />
+        </mxCell>
+
+        <!-- Зуммер -->
+        <mxCell id="buzzer" value="&lt;b&gt;Зуммер (пассивный)&lt;/b&gt;&lt;br&gt;GPIO25 (ШИМ)&lt;br&gt;Резистор: 100 Ом&lt;br&gt;&lt;font color=&quot;#006600&quot;&gt;Питание: 3.3V&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="775" y="80" width="155" height="85" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- НИЗ — ADC / Digital датчики                   -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- DHT11 -->
+        <mxCell id="dht11" value="&lt;b&gt;DHT11 (доп.)&lt;/b&gt;&lt;br&gt;T°/H запасной&lt;br&gt;1-Wire GPIO4&lt;br&gt;Подтяжка 10кОм&lt;br&gt;&lt;font color=&quot;#006600&quot;&gt;Питание: 3.3V&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="90" y="690" width="150" height="95" as="geometry" />
+        </mxCell>
+
+        <!-- KY-037 -->
+        <mxCell id="ky037" value="&lt;b&gt;KY-037&lt;/b&gt;&lt;br&gt;Датчик шума&lt;br&gt;ADC1 GPIO39&lt;br&gt;30 – 90 дБ (расч.)&lt;br&gt;&lt;font color=&quot;#006600&quot;&gt;Питание: 3.3V&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="280" y="690" width="150" height="95" as="geometry" />
+        </mxCell>
+
+        <!-- MQ-135 -->
+        <mxCell id="mq135" value="&lt;b&gt;MQ-135 (доп.)&lt;/b&gt;&lt;br&gt;CO&#8322; аналоговый&lt;br&gt;ADC1 GPIO36&lt;br&gt;Прогрев 48 ч&lt;br&gt;&lt;font color=&quot;#CC0000&quot;&gt;&lt;b&gt;Питание: 5V !&lt;/b&gt;&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="460" y="690" width="150" height="95" as="geometry" />
+        </mxCell>
+
+        <!-- PIR HC-SR501 -->
+        <mxCell id="pir" value="&lt;b&gt;PIR HC-SR501&lt;/b&gt;&lt;br&gt;Датчик движения&lt;br&gt;Дальность: 3 – 7 м&lt;br&gt;Digital GPIO27&lt;br&gt;ISR: RISING edge&lt;br&gt;&lt;font color=&quot;#CC0000&quot;&gt;&lt;b&gt;Питание: 5V !&lt;/b&gt;&lt;/font&gt;"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="645" y="685" width="160" height="105" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- РЁБРА (соединения)                              -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- BME280 → I2C шина -->
+        <mxCell id="e_bme_i2c" value="I2C"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.4;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=2;fontColor=#006600;fontStyle=1;fontSize=9;"
+          edge="1" source="bme280" target="i2cbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- BH1750 → I2C шина -->
+        <mxCell id="e_bh_i2c" value="I2C"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=2;fontColor=#006600;fontStyle=1;fontSize=9;"
+          edge="1" source="bh1750" target="i2cbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- LCD 1602 → I2C шина -->
+        <mxCell id="e_lcd_i2c" value="I2C"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=2;fontColor=#006600;fontStyle=1;fontSize=9;"
+          edge="1" source="lcd1602" target="i2cbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- I2C шина → ESP32 -->
+        <mxCell id="e_i2c_esp" value="GPIO21 SDA&#xa;GPIO22 SCL"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=3;fontColor=#006600;fontStyle=1;fontSize=9;"
+          edge="1" source="i2cbus" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ZM106 → ESP32 -->
+        <mxCell id="e_zm_esp" value="UART2&#xa;GPIO16 RX / GPIO17 TX"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.4;entryDx=0;entryDy=0;strokeColor=#d6b656;strokeWidth=3;fontColor=#996600;fontStyle=1;fontSize=9;"
+          edge="1" source="zm106" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- DHT11 → ESP32 -->
+        <mxCell id="e_dht_esp" value="1-Wire GPIO4"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.1;entryY=1;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=1;fontColor=#006600;fontSize=9;"
+          edge="1" source="dht11" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- KY-037 → ESP32 -->
+        <mxCell id="e_ky_esp" value="ADC1 GPIO39"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;strokeColor=#9673a6;strokeWidth=2;fontColor=#6600cc;fontSize=9;"
+          edge="1" source="ky037" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- MQ-135 → ESP32 -->
+        <mxCell id="e_mq_esp" value="ADC1 GPIO36"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#9673a6;strokeWidth=2;fontColor=#6600cc;fontSize=9;"
+          edge="1" source="mq135" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- PIR → ESP32 -->
+        <mxCell id="e_pir_esp" value="GPIO27 RISING"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.7;entryY=1;entryDx=0;entryDy=0;strokeColor=#9673a6;strokeWidth=2;fontColor=#6600cc;fontSize=9;"
+          edge="1" source="pir" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- BTN MODE → ESP32 -->
+        <mxCell id="e_btnm_esp" value="GPIO32 FALLING"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;strokeColor=#b85450;strokeWidth=2;fontColor=#aa0000;fontSize=9;"
+          edge="1" source="btnMode" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- BTN OK → ESP32 -->
+        <mxCell id="e_btno_esp" value="GPIO33 FALLING"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.45;entryY=0;entryDx=0;entryDy=0;strokeColor=#b85450;strokeWidth=2;fontColor=#aa0000;fontSize=9;"
+          edge="1" source="btnOK" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- RGB LED → ESP32 -->
+        <mxCell id="e_led_esp" value="GPIO13/12/14"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.65;entryY=0;entryDx=0;entryDy=0;strokeColor=#b85450;strokeWidth=2;fontColor=#aa0000;fontSize=9;"
+          edge="1" source="rgbLed" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Buzzer → ESP32 -->
+        <mxCell id="e_buzz_esp" value="GPIO25 PWM"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=0;entryDx=0;entryDy=0;strokeColor=#b85450;strokeWidth=2;fontColor=#aa0000;fontSize=9;"
+          edge="1" source="buzzer" target="esp32" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- ЛЕГЕНДА                                         -->
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <mxCell id="leg_bg" value=""
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="30" y="820" width="1100" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg_title" value="&lt;b&gt;Условные обозначения:&lt;/b&gt;"
+          style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontStyle=1;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="820" width="160" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg1" value="I2C датчики (3.3V)"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="847" width="150" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg2" value="UART датчик (5V!)"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=9;"
+          vertex="1" parent="1">
+          <mxGeometry x="205" y="847" width="150" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg3" value="ADC / Digital датчики"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;"
+          vertex="1" parent="1">
+          <mxGeometry x="370" y="847" width="150" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg4" value="Управление и индикация"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;"
+          vertex="1" parent="1">
+          <mxGeometry x="535" y="847" width="160" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg5" value="Микроконтроллер ESP32"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;"
+          vertex="1" parent="1">
+          <mxGeometry x="710" y="847" width="165" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg_note" value="&lt;font color=&quot;#CC0000&quot;&gt;&lt;b&gt;5V !&lt;/b&gt;&lt;/font&gt; = требует отдельного питания 5V от шины VIN/USB &nbsp;|&nbsp; &lt;font color=&quot;#006600&quot;&gt;3.3V&lt;/font&gt; = питается от вывода 3V3 ESP32 &nbsp;|&nbsp; ADC2 (GPIO0-27) несовместим с Wi-Fi — используем только ADC1 (GPIO32-39)"
+          style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=9;"
+          vertex="1" parent="1">
+          <mxGeometry x="40" y="822" width="1080" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

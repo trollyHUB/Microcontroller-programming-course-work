@@ -1,22 +1,18 @@
 /*
- * NEXIS Wellness Station — ESP32 Firmware v2.0
- * ─────────────────────────────────────────────
- * Датчики:
- *   BME280        — температура, влажность, давление (I2C 0x76) ⭐ основной
- *   DHT11         — температура, влажность (GPIO4)               доп.
- *   Winsen ZM106-VOC — CO₂/VOC (UART Serial2, GPIO16/17)       ⭐ основной
- *   MQ-135        — CO₂ аналоговый (ADC GPIO36)                 доп.
+ * NEXIS Wellness Station — ESP32 Firmware v2.0 (TEST BUILD)
+ * ──────────────────────────────────────────────────────────
+ * Активные компоненты:
+ *   BME280        — температура, влажность, давление (I2C 0x76)
  *   BH1750        — освещённость (I2C 0x23)
+ *   LCD 1602      — дисплей (I2C 0x27)
  *   PIR HC-SR501  — присутствие (GPIO27)
  *   KY-037        — уровень шума (ADC GPIO39)
+ *   RGB LED       — GPIO 13/12/14
+ *   Зуммер        — GPIO 25
+ *   Кнопка Mode   — GPIO 32
+ *   Кнопка OK     — GPIO 33
  *
- * Дисплей:  LCD 1602 (I2C 0x27)
- * RGB LED:  GPIO 13/12/14
- * Зуммер:   GPIO 25
- * Кнопки:   GPIO 32 (Mode), 33 (OK)
- *
- * Сборка: PlatformIO, platform=espressif32, board=esp32dev
- * Настройте config.h перед прошивкой!
+ * DHT11 / MQ-135 / ZM106-VOC — ОТКЛЮЧЕНЫ (нет в сборке)
  */
 
 #include <Arduino.h>
@@ -25,18 +21,16 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <Adafruit_BME280.h>
-#include <DHT.h>
 #include <BH1750.h>
 #include <LiquidCrystal_I2C.h>
 #include "config.h"
 
 // ============================================================
-//  ОБЪЕКТЫ ДАТЧИКОВ И ДИСПЛЕЯ
+//  ОБЪЕКТЫ
 // ============================================================
 
-Adafruit_BME280 bme;
-DHT             dht(PIN_DHT11, DHT11);
-BH1750          lightMeter;
+Adafruit_BME280   bme;
+BH1750            lightMeter;
 LiquidCrystal_I2C lcd(I2C_LCD, 16, 2);
 
 // ============================================================
@@ -44,30 +38,12 @@ LiquidCrystal_I2C lcd(I2C_LCD, 16, 2);
 // ============================================================
 
 struct SensorData {
-    // BME280 (основной)
     float temperature = NAN;  // °C
     float humidity    = NAN;  // %
     float pressure    = NAN;  // hPa
-
-    // ZM106-VOC (основной CO₂/VOC)
-    float  co2        = NAN;  // ppm
-    bool   zm106OK    = false;
-
-    // BH1750
-    float  light      = NAN;  // lux
-
-    // KY-037 (шум)
-    float  noise      = NAN;  // dB (расчётное)
-
-    // PIR
-    bool   motion     = false;
-
-    // DHT11 (дополнительный)
-    float  dht_temp   = NAN;
-    float  dht_hum    = NAN;
-
-    // MQ-135 (дополнительный, сырое значение)
-    int    mq135Raw   = 0;
+    float light       = NAN;  // lux
+    float noise       = NAN;  // dB
+    bool  motion      = false;
 } sensors;
 
 // ============================================================
@@ -77,18 +53,16 @@ struct SensorData {
 enum AlertLevel { ALERT_OK, ALERT_WARN, ALERT_DANGER };
 
 struct SystemState {
-    bool        wifiConnected  = false;
-    AlertLevel  alertLevel     = ALERT_OK;
-    String      alertMessage   = "";
+    bool       wifiConnected = false;
+    AlertLevel alertLevel    = ALERT_OK;
+    String     alertMessage  = "";
 
-    // Pomodoro
     enum PomodoroMode { POMO_IDLE, POMO_WORK, POMO_BREAK } pomoMode = POMO_IDLE;
-    uint32_t    pomoStart      = 0;
-    int         pomoSecondsLeft = 0;
-    int         pomoCycles     = 0;
+    uint32_t pomoStart       = 0;
+    int      pomoSecondsLeft = 0;
+    int      pomoCycles      = 0;
 
-    // LCD экраны
-    uint8_t     displayPage    = 0;
+    uint8_t displayPage = 0;
     static const uint8_t DISPLAY_PAGES = 5;
 } state;
 
@@ -96,65 +70,21 @@ struct SystemState {
 //  ТАЙМЕРЫ
 // ============================================================
 
-uint32_t lastSensorRead   = 0;
-uint32_t lastServerPost   = 0;
+uint32_t lastSensorRead    = 0;
 uint32_t lastDisplayChange = 0;
-uint32_t lastZM106Read    = 0;
-uint32_t lastWifiCheck    = 0;
+uint32_t lastWifiCheck     = 0;
 
 // ============================================================
-//  ISR — ПРЕРЫВАНИЯ (IRAM_ATTR — код в IRAM для быстрого доступа)
+//  ISR — ПРЕРЫВАНИЯ
 // ============================================================
 
-volatile bool isrBtnMode  = false;  // флаг нажатия кнопки MODE
-volatile bool isrBtnOK    = false;  // флаг нажатия кнопки OK
-volatile bool isrPIR      = false;  // флаг срабатывания PIR
+volatile bool isrBtnMode = false;
+volatile bool isrBtnOK   = false;
+volatile bool isrPIR     = false;
 
-// ISR-обработчики — вызываются аппаратно, только устанавливают флаг
 void IRAM_ATTR onBtnMode() { isrBtnMode = true; }
 void IRAM_ATTR onBtnOK()   { isrBtnOK   = true; }
 void IRAM_ATTR onPIR()     { isrPIR     = true; }
-
-// ============================================================
-//  ZM106-VOC — UART ПРОТОКОЛ WINSEN
-// ============================================================
-
-// Команда запроса концентрации газа (FF 01 86 + 5 нулей + CRC)
-const uint8_t ZM106_CMD_READ[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
-
-uint8_t zm106CalcCRC(uint8_t *buf, int len) {
-    uint8_t sum = 0;
-    for (int i = 1; i < len - 1; i++) sum += buf[i];
-    return (~sum) + 1;
-}
-
-bool zm106ReadConcentration(float &ppm) {
-    // Очистить буфер перед запросом
-    while (Serial2.available()) Serial2.read();
-
-    // Отправить команду чтения
-    Serial2.write(ZM106_CMD_READ, 9);
-
-    // Ждать ответ (макс 500 мс)
-    uint32_t t = millis();
-    while (Serial2.available() < 9) {
-        if (millis() - t > 500) return false;
-        delay(10);
-    }
-
-    uint8_t resp[9];
-    Serial2.readBytes(resp, 9);
-
-    // Проверить стартовый байт и команду
-    if (resp[0] != 0xFF || resp[1] != 0x86) return false;
-
-    // Проверить CRC
-    if (zm106CalcCRC(resp, 9) != resp[8]) return false;
-
-    uint16_t raw = ((uint16_t)resp[2] << 8) | resp[3];
-    ppm = (float)raw;
-    return (ppm >= 0 && ppm <= 10000);
-}
 
 // ============================================================
 //  RGB LED
@@ -168,23 +98,17 @@ void setLED(uint8_t r, uint8_t g, uint8_t b) {
 
 void updateLED() {
     if (!state.wifiConnected) {
-        // Синий мигающий — нет WiFi
         bool blink = (millis() / 500) % 2;
-        setLED(0, 0, blink ? 200 : 0);
+        setLED(0, 0, blink ? 200 : 0);  // Синий мигающий — нет WiFi
         return;
     }
-    if (state.pomoMode == SystemState::POMO_BREAK) {
-        setLED(0, 0, 100);   // Синий — перерыв
-        return;
-    }
-    if (state.pomoMode == SystemState::POMO_WORK) {
-        setLED(0, 150, 50);  // Зелёно-голубой — работа
-        return;
-    }
+    if (state.pomoMode == SystemState::POMO_BREAK) { setLED(0, 0, 100);   return; }
+    if (state.pomoMode == SystemState::POMO_WORK)  { setLED(0, 150, 50);  return; }
+
     switch (state.alertLevel) {
-        case ALERT_OK:     setLED(0, 200, 0);    break;  // Зелёный
-        case ALERT_WARN:   setLED(200, 150, 0);  break;  // Жёлтый
-        case ALERT_DANGER: setLED(255, 0, 0);    break;  // Красный
+        case ALERT_OK:     setLED(0, 200, 0);   break;  // Зелёный
+        case ALERT_WARN:   setLED(200, 150, 0); break;  // Жёлтый
+        case ALERT_DANGER: setLED(255, 0, 0);   break;  // Красный
     }
 }
 
@@ -192,20 +116,18 @@ void updateLED() {
 //  ЗУММЕР
 // ============================================================
 
-void beep(int freq, int ms) {
-    tone(PIN_BUZZER, freq, ms);
-}
+void beep(int freq, int ms) { tone(PIN_BUZZER, freq, ms); }
 
-void beepOK()    { beep(1000, 100); }
-void beepWarn()  { for (int i = 0; i < 3; i++) { beep(800, 150); delay(200); } }
-void beepDanger(){ for (int i = 0; i < 5; i++) { beep(500, 100); delay(150); } }
+void beepOK()     { beep(1000, 100); }
+void beepWarn()   { for (int i = 0; i < 3; i++) { beep(800, 150); delay(200); } }
+void beepDanger() { for (int i = 0; i < 5; i++) { beep(500, 100); delay(150); } }
 void beepPomoDone() {
     int melody[] = {1047, 1175, 1319, 1397};
     for (int n : melody) { beep(n, 200); delay(220); }
 }
 
 // ============================================================
-//  LCD ДИСПЛЕЙ — ЭКРАНЫ
+//  LCD — ЭКРАНЫ
 // ============================================================
 
 void lcdPrint(const char *line1, const char *line2) {
@@ -220,7 +142,6 @@ void lcdPrintf(uint8_t row, const char *fmt, ...) {
     va_start(args, fmt);
     vsnprintf(buf, 17, fmt, args);
     va_end(args);
-    // Дополнить пробелами до 16 символов
     for (int i = strlen(buf); i < 16; i++) buf[i] = ' ';
     lcd.setCursor(0, row);
     lcd.print(buf);
@@ -229,54 +150,49 @@ void lcdPrintf(uint8_t row, const char *fmt, ...) {
 void updateDisplay() {
     switch (state.displayPage) {
 
-        case 0: // Температура и влажность (BME280)
+        case 0:  // Температура + Влажность
             if (!isnan(sensors.temperature)) {
                 lcdPrintf(0, "Temp:  %5.1f C  ", sensors.temperature);
                 lcdPrintf(1, "Hum:   %5.1f %%  ", sensors.humidity);
             } else {
-                lcdPrint("BME280 ERROR    ", "Check wiring!   ");
+                lcdPrint("BME280 ERROR    ", "Check I2C 0x76  ");
             }
             break;
 
-        case 1: // CO₂/VOC (ZM106) и давление
-            if (sensors.zm106OK) {
-                lcdPrintf(0, "CO2:%5.0f ppm   ", sensors.co2);
-            } else {
-                lcdPrint("ZM106 ERROR     ", "Check UART!     ");
-            }
+        case 1:  // Давление + Освещённость
             if (!isnan(sensors.pressure)) {
-                lcdPrintf(1, "Press:%6.1f hPa", sensors.pressure);
+                lcdPrintf(0, "Press:%6.1f hPa", sensors.pressure);
             } else {
-                lcdPrintf(1, "Pressure: N/A   ");
+                lcdPrintf(0, "Pressure: N/A   ");
             }
-            break;
-
-        case 2: // Освещённость и шум
             if (!isnan(sensors.light)) {
-                lcdPrintf(0, "Light:%6.0f lux", sensors.light);
+                lcdPrintf(1, "Light:%6.0f lux", sensors.light);
             } else {
-                lcdPrint("BH1750 ERROR    ", "                ");
+                lcdPrintf(1, "Light:  N/A     ");
             }
+            break;
+
+        case 2:  // Шум + Движение
             if (!isnan(sensors.noise)) {
-                lcdPrintf(1, "Noise: %5.1f dB ", sensors.noise);
+                lcdPrintf(0, "Noise: %5.1f dB ", sensors.noise);
             } else {
-                lcdPrintf(1, "Noise: N/A      ");
+                lcdPrintf(0, "Noise:  N/A     ");
+            }
+            lcdPrintf(1, "Motion: %s", sensors.motion ? "YES !" : "No   ");
+            break;
+
+        case 3:  // WiFi статус
+            lcdPrintf(0, "WiFi: %s", state.wifiConnected ? "Connected" : "NO CONN  ");
+            if (!state.alertMessage.isEmpty()) {
+                char buf[17];
+                state.alertMessage.toCharArray(buf, 17);
+                lcdPrintf(1, "%s", buf);
+            } else {
+                lcdPrintf(1, "All sensors OK  ");
             }
             break;
 
-        case 3: // Движение и статус WiFi
-        {
-            const char *motionStr = sensors.motion ? "YES  (!)        " : "No              ";
-            lcdPrintf(0, "Motion: %s", motionStr);
-            if (state.wifiConnected) {
-                lcdPrint("                ", "WiFi: Connected ");
-            } else {
-                lcdPrint("                ", "WiFi: NO CONN   ");
-            }
-            break;
-        }
-
-        case 4: // Pomodoro таймер
+        case 4:  // Pomodoro
             if (state.pomoMode == SystemState::POMO_IDLE) {
                 lcdPrint("Pomodoro: IDLE  ", "Press OK to start");
             } else {
@@ -297,32 +213,11 @@ void updateDisplay() {
 void readBME280() {
     sensors.temperature = bme.readTemperature();
     sensors.humidity    = bme.readHumidity();
-    sensors.pressure    = bme.readPressure() / 100.0f;  // Pa → hPa
+    sensors.pressure    = bme.readPressure() / 100.0f;
 
-    // Санитарная проверка
     if (sensors.temperature < -40 || sensors.temperature > 85) sensors.temperature = NAN;
     if (sensors.humidity < 0    || sensors.humidity > 100)     sensors.humidity    = NAN;
     if (sensors.pressure < 870  || sensors.pressure > 1085)    sensors.pressure    = NAN;
-}
-
-void readDHT11() {
-    float t = dht.readTemperature();
-    float h = dht.readHumidity();
-    if (!isnan(t) && !isnan(h)) {
-        sensors.dht_temp = t;
-        sensors.dht_hum  = h;
-    }
-}
-
-void readZM106() {
-    float ppm;
-    if (zm106ReadConcentration(ppm)) {
-        sensors.co2    = ppm;
-        sensors.zm106OK = true;
-    } else {
-        sensors.zm106OK = false;
-        Serial.println("[ZM106] Read failed");
-    }
 }
 
 void readBH1750() {
@@ -331,7 +226,6 @@ void readBH1750() {
 }
 
 void readNoise() {
-    // Сделать несколько замеров и взять максимум (шум импульсный)
     int peak = 0;
     for (int i = 0; i < 20; i++) {
         int v = analogRead(PIN_NOISE);
@@ -342,7 +236,6 @@ void readNoise() {
 }
 
 void readPIR() {
-    // ISR-флаг фиксирует движение мгновенно; polling как резерв для текущего состояния
     if (isrPIR) {
         sensors.motion = true;
         isrPIR = false;
@@ -351,26 +244,13 @@ void readPIR() {
     }
 }
 
-void readMQ135() {
-    sensors.mq135Raw = analogRead(PIN_MQ135);
-    // Используем как доп. данные; отправляем на сервер только ZM106
-}
-
 // ============================================================
-//  ПРОВЕРКА ПОРОГОВЫХ ЗНАЧЕНИЙ
+//  ПОРОГОВЫЕ ЗНАЧЕНИЯ
 // ============================================================
 
 AlertLevel checkThresholds() {
     AlertLevel level = ALERT_OK;
     state.alertMessage = "";
-
-    if (sensors.zm106OK && sensors.co2 > THRESH_CO2_DANGER) {
-        level = ALERT_DANGER;
-        state.alertMessage = "CO2 CRITICAL!";
-    } else if (sensors.zm106OK && sensors.co2 > THRESH_CO2_WARN) {
-        if (level < ALERT_WARN) level = ALERT_WARN;
-        state.alertMessage = "CO2 HIGH! Ventilate";
-    }
 
     if (!isnan(sensors.temperature)) {
         if (sensors.temperature > THRESH_TEMP_DANGER) {
@@ -378,13 +258,14 @@ AlertLevel checkThresholds() {
             state.alertMessage = "TEMP TOO HIGH!";
         } else if (sensors.temperature > THRESH_TEMP_WARN && level < ALERT_WARN) {
             level = ALERT_WARN;
+            state.alertMessage = "Temp elevated";
         }
     }
 
     if (!isnan(sensors.humidity)) {
         if (sensors.humidity > THRESH_HUM_DANGER) {
             level = ALERT_DANGER;
-            state.alertMessage = "HUMIDITY CRITICAL!";
+            if (state.alertMessage.isEmpty()) state.alertMessage = "HUMIDITY HIGH!";
         } else if (sensors.humidity > THRESH_HUM_WARN && level < ALERT_WARN) {
             level = ALERT_WARN;
             if (state.alertMessage.isEmpty()) state.alertMessage = "Humidity high";
@@ -393,8 +274,7 @@ AlertLevel checkThresholds() {
 
     if (!isnan(sensors.light) && sensors.light > 0) {
         if (sensors.light < THRESH_LIGHT_DANGER) {
-            level = ALERT_DANGER;
-            state.alertMessage = "LIGHT TOO LOW!";
+            if (level < ALERT_DANGER) { level = ALERT_DANGER; state.alertMessage = "LIGHT TOO LOW!"; }
         } else if (sensors.light < THRESH_LIGHT_WARN && level < ALERT_WARN) {
             level = ALERT_WARN;
             if (state.alertMessage.isEmpty()) state.alertMessage = "Light low";
@@ -403,8 +283,7 @@ AlertLevel checkThresholds() {
 
     if (!isnan(sensors.noise)) {
         if (sensors.noise > THRESH_NOISE_DANGER) {
-            level = ALERT_DANGER;
-            state.alertMessage = "NOISE TOO HIGH!";
+            if (level < ALERT_DANGER) { level = ALERT_DANGER; state.alertMessage = "NOISE TOO HIGH!"; }
         } else if (sensors.noise > THRESH_NOISE_WARN && level < ALERT_WARN) {
             level = ALERT_WARN;
             if (state.alertMessage.isEmpty()) state.alertMessage = "Noise elevated";
@@ -415,7 +294,7 @@ AlertLevel checkThresholds() {
 }
 
 // ============================================================
-//  ОТПРАВКА ДАННЫХ НА СЕРВЕР
+//  ОТПРАВКА НА СЕРВЕР
 // ============================================================
 
 bool postSensorData() {
@@ -430,7 +309,6 @@ bool postSensorData() {
     if (!isnan(sensors.temperature)) doc["temperature"] = round(sensors.temperature * 10) / 10.0;
     if (!isnan(sensors.humidity))    doc["humidity"]    = round(sensors.humidity * 10) / 10.0;
     if (!isnan(sensors.pressure))    doc["pressure"]    = round(sensors.pressure * 10) / 10.0;
-    if (sensors.zm106OK)             doc["co2"]         = round(sensors.co2);
     if (!isnan(sensors.light))       doc["light"]       = round(sensors.light);
     if (!isnan(sensors.noise))       doc["noise"]       = round(sensors.noise * 10) / 10.0;
     doc["motion"] = sensors.motion ? 1 : 0;
@@ -499,7 +377,7 @@ void wifiConnect() {
         delay(2000);
     } else {
         state.wifiConnected = false;
-        Serial.println("[WiFi] Connection FAILED — working offline");
+        Serial.println("[WiFi] FAILED — working offline");
         lcdPrint("WiFi FAILED     ", "Working offline ");
         delay(2000);
     }
@@ -510,8 +388,8 @@ void wifiConnect() {
 // ============================================================
 
 void pomoStart() {
-    state.pomoMode   = SystemState::POMO_WORK;
-    state.pomoStart  = millis();
+    state.pomoMode        = SystemState::POMO_WORK;
+    state.pomoStart       = millis();
     state.pomoSecondsLeft = POMO_WORK_MIN * 60;
     lcdPrint("Pomodoro START! ", "Work time! :)   ");
     beepOK();
@@ -535,27 +413,20 @@ void updatePomodoro() {
     if (state.pomoMode == SystemState::POMO_WORK) {
         int left = POMO_WORK_MIN * 60 - (int)elapsed;
         state.pomoSecondsLeft = max(0, left);
-
         if (left <= 0) {
-            // Рабочий цикл завершён
             state.pomoCycles++;
-            Serial.printf("[Pomo] Work done! Cycle #%d complete.\n", state.pomoCycles);
             postPomodoroEvent("work", POMO_WORK_MIN);
             beepPomoDone();
             lcdPrint("WORK DONE! Great", "Take a break!   ");
             delay(2000);
-
-            state.pomoMode  = SystemState::POMO_BREAK;
-            state.pomoStart = millis();
+            state.pomoMode        = SystemState::POMO_BREAK;
+            state.pomoStart       = millis();
             state.pomoSecondsLeft = POMO_BREAK_MIN * 60;
         }
     } else if (state.pomoMode == SystemState::POMO_BREAK) {
         int left = POMO_BREAK_MIN * 60 - (int)elapsed;
         state.pomoSecondsLeft = max(0, left);
-
         if (left <= 0) {
-            // Перерыв завершён
-            Serial.println("[Pomo] Break done — ready for next cycle");
             postPomodoroEvent("break", POMO_BREAK_MIN);
             beepOK();
             lcdPrint("Break over!     ", "Press OK to cont");
@@ -565,7 +436,7 @@ void updatePomodoro() {
 }
 
 // ============================================================
-//  КНОПКИ (с антидребезгом)
+//  КНОПКИ
 // ============================================================
 
 uint32_t btnModeLast = 0, btnOKLast = 0;
@@ -574,24 +445,19 @@ const uint32_t DEBOUNCE_MS = 200;
 void handleButtons() {
     uint32_t now = millis();
 
-    // Кнопка MODE — ISR-флаг зафиксировал нажатие, debounce защищает от дребезга
     if (isrBtnMode && now - btnModeLast > DEBOUNCE_MS) {
-        isrBtnMode = false;
+        isrBtnMode  = false;
         btnModeLast = now;
         state.displayPage = (state.displayPage + 1) % SystemState::DISPLAY_PAGES;
         updateDisplay();
         beepOK();
     }
 
-    // Кнопка OK — запуск/остановка Pomodoro через прерывание
     if (isrBtnOK && now - btnOKLast > DEBOUNCE_MS) {
-        isrBtnOK = false;
+        isrBtnOK  = false;
         btnOKLast = now;
-        if (state.pomoMode == SystemState::POMO_IDLE) {
-            pomoStart();
-        } else {
-            pomoStop();
-        }
+        if (state.pomoMode == SystemState::POMO_IDLE) pomoStart();
+        else                                          pomoStop();
     }
 }
 
@@ -601,7 +467,9 @@ void handleButtons() {
 
 void setup() {
     Serial.begin(115200);
-    Serial.println("\n=== NEXIS Wellness Station v2.0 ===");
+    Serial.println("\n=== NEXIS Wellness Station v2.0 [TEST BUILD] ===");
+    Serial.println("    Active: BME280, BH1750, LCD, PIR, KY-037, LED, Buzzer, Buttons");
+    Serial.println("    Skipped: DHT11, MQ-135, ZM106-VOC");
 
     // Пины
     pinMode(PIN_PIR,      INPUT);
@@ -612,18 +480,16 @@ void setup() {
     pinMode(PIN_LED_B,    OUTPUT);
     pinMode(PIN_BUZZER,   OUTPUT);
 
-    // Регистрация аппаратных прерываний
-    // FALLING — кнопки с INPUT_PULLUP: нажатие = HIGH→LOW
+    // Прерывания
     attachInterrupt(digitalPinToInterrupt(PIN_BTN_MODE), onBtnMode, FALLING);
     attachInterrupt(digitalPinToInterrupt(PIN_BTN_OK),   onBtnOK,   FALLING);
-    // RISING — PIR выдаёт HIGH при обнаружении движения
     attachInterrupt(digitalPinToInterrupt(PIN_PIR),      onPIR,     RISING);
-    Serial.println("[OK] Hardware interrupts attached (BTN_MODE, BTN_OK, PIR)");
+    Serial.println("[OK] Interrupts: BTN_MODE, BTN_OK, PIR");
 
-    analogReadResolution(12);   // ADC 12 бит (0–4095)
-    analogSetAttenuation(ADC_11db); // Входной диапазон 0–3.3V
+    analogReadResolution(12);
+    analogSetAttenuation(ADC_11db);
 
-    setLED(0, 0, 50);  // Слабый синий пока инициализируем
+    setLED(0, 0, 50);
 
     // I2C
     Wire.begin(I2C_SDA, I2C_SCL);
@@ -634,68 +500,54 @@ void setup() {
     lcdPrint("NEXIS Wellness  ", "Initializing... ");
     delay(500);
 
-    // BME280 (основной датчик T/H/P)
+    // BME280
     if (bme.begin(I2C_BME280)) {
-        // Режим weatherStation: минимальное потребление
         bme.setSampling(Adafruit_BME280::MODE_NORMAL,
-                        Adafruit_BME280::SAMPLING_X2,    // температура
-                        Adafruit_BME280::SAMPLING_X16,   // давление
-                        Adafruit_BME280::SAMPLING_X1,    // влажность
+                        Adafruit_BME280::SAMPLING_X2,
+                        Adafruit_BME280::SAMPLING_X16,
+                        Adafruit_BME280::SAMPLING_X1,
                         Adafruit_BME280::FILTER_X16,
                         Adafruit_BME280::STANDBY_MS_0_5);
-        Serial.println("[OK] BME280 initialized");
+        Serial.println("[OK] BME280 (0x76)");
+        lcdPrint("BME280  OK      ", "                ");
     } else {
-        Serial.println("[ERR] BME280 NOT FOUND — check I2C wiring (0x76)");
+        Serial.println("[ERR] BME280 NOT FOUND — check SDA/SCL and 3.3V");
         lcdPrint("BME280 ERROR!   ", "Check I2C 0x76  ");
         delay(2000);
     }
 
-    // DHT11 (доп.)
-    dht.begin();
-    Serial.println("[OK] DHT11 initialized");
-
     // BH1750
     if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, I2C_BH1750)) {
-        Serial.println("[OK] BH1750 initialized");
+        Serial.println("[OK] BH1750 (0x23)");
+        lcdPrint("BH1750  OK      ", "                ");
     } else {
-        Serial.println("[ERR] BH1750 NOT FOUND — check I2C wiring (0x23)");
+        Serial.println("[ERR] BH1750 NOT FOUND — check ADDR→GND and 3.3V");
+        lcdPrint("BH1750 ERROR!   ", "Check I2C 0x23  ");
+        delay(2000);
     }
-
-    // ZM106-VOC UART (Serial2)
-    Serial2.begin(ZM106_BAUD, SERIAL_8N1, PIN_ZM106_RX, PIN_ZM106_TX);
-    Serial.println("[OK] Serial2 (ZM106-VOC) initialized");
     delay(300);
-
-    // Первое чтение ZM106
-    readZM106();
-    if (sensors.zm106OK) {
-        Serial.printf("[OK] ZM106-VOC first read: %.0f ppm\n", sensors.co2);
-    } else {
-        Serial.println("[WARN] ZM106-VOC: no response (may need warm-up)");
-    }
 
     // WiFi
     wifiConnect();
 
-    // Первое чтение датчиков
+    // Первое чтение
     readBME280();
     readBH1750();
     readNoise();
     readPIR();
-    readDHT11();
-    readMQ135();
 
     state.alertLevel = checkThresholds();
     updateLED();
     updateDisplay();
 
-    Serial.println("[OK] Setup complete — starting main loop");
-    Serial.printf("     BME280:   T=%.1f C  H=%.1f%%  P=%.1f hPa\n",
+    Serial.println("[OK] Setup complete!\n");
+    Serial.println("─────────────────────────────");
+    Serial.printf("BME280: T=%.1f°C  H=%.1f%%  P=%.1f hPa\n",
         sensors.temperature, sensors.humidity, sensors.pressure);
-    Serial.printf("     ZM106:    %.0f ppm (ok=%d)\n", sensors.co2, sensors.zm106OK);
-    Serial.printf("     BH1750:   %.0f lux\n", sensors.light);
-    Serial.printf("     KY-037:   %.1f dB\n", sensors.noise);
-    Serial.printf("     PIR:      %s\n", sensors.motion ? "MOTION" : "clear");
+    Serial.printf("BH1750: %.0f lux\n", sensors.light);
+    Serial.printf("KY-037: %.1f dB\n", sensors.noise);
+    Serial.printf("PIR:    %s\n", sensors.motion ? "MOTION" : "clear");
+    Serial.println("─────────────────────────────");
 }
 
 // ============================================================
@@ -705,13 +557,7 @@ void setup() {
 void loop() {
     uint32_t now = millis();
 
-    // --- ZM106-VOC — опрос по UART каждые 5 секунд ---
-    if (now - lastZM106Read >= ZM106_READ_INTERVAL_MS) {
-        lastZM106Read = now;
-        readZM106();
-    }
-
-    // --- Все остальные датчики + отправка на сервер ---
+    // Чтение датчиков каждые 10 секунд
     if (now - lastSensorRead >= SENSOR_INTERVAL_MS) {
         lastSensorRead = now;
 
@@ -719,13 +565,10 @@ void loop() {
         readBH1750();
         readNoise();
         readPIR();
-        readDHT11();
-        readMQ135();
 
         AlertLevel prevAlert = state.alertLevel;
         state.alertLevel = checkThresholds();
 
-        // Звуковой сигнал при переходе к опасному уровню
         if (state.alertLevel == ALERT_DANGER && prevAlert != ALERT_DANGER) {
             beepDanger();
         } else if (state.alertLevel == ALERT_WARN && prevAlert == ALERT_OK) {
@@ -734,56 +577,43 @@ void loop() {
 
         updateLED();
 
-        // Вывод в Serial Monitor
         Serial.println("─────────────────────────────");
         Serial.printf("BME280: T=%.1f°C  H=%.1f%%  P=%.1f hPa\n",
             sensors.temperature, sensors.humidity, sensors.pressure);
-        Serial.printf("ZM106:  CO2=%.0f ppm (ok=%d)\n", sensors.co2, sensors.zm106OK);
         Serial.printf("BH1750: %.0f lux\n", sensors.light);
         Serial.printf("KY-037: %.1f dB\n", sensors.noise);
-        Serial.printf("PIR:    %s   MQ135(raw)=%d\n",
-            sensors.motion ? "MOTION" : "clear", sensors.mq135Raw);
-        if (!isnan(sensors.dht_temp)) {
-            Serial.printf("DHT11:  T=%.1f°C  H=%.1f%%\n",
-                sensors.dht_temp, sensors.dht_hum);
-        }
+        Serial.printf("PIR:    %s\n", sensors.motion ? "MOTION DETECTED" : "clear");
         if (state.alertLevel != ALERT_OK) {
             Serial.printf("ALERT [%s]: %s\n",
                 state.alertLevel == ALERT_DANGER ? "DANGER" : "WARN",
                 state.alertMessage.c_str());
         }
 
-        // Отправить на сервер
         bool sent = postSensorData();
-        Serial.printf("Server POST: %s\n", sent ? "OK" : "FAILED");
+        Serial.printf("Server POST: %s\n", sent ? "OK" : "FAILED (offline?)");
     }
 
-    // --- Смена экрана LCD ---
+    // Смена экрана LCD каждые 3 секунды
     if (now - lastDisplayChange >= DISPLAY_INTERVAL_MS) {
         lastDisplayChange = now;
         state.displayPage = (state.displayPage + 1) % SystemState::DISPLAY_PAGES;
         updateDisplay();
     }
 
-    // --- Pomodoro ---
     updatePomodoro();
-
-    // --- Кнопки ---
     handleButtons();
 
-    // --- Проверка WiFi и переподключение ---
+    // Переподключение WiFi
     if (now - lastWifiCheck >= WIFI_RECONNECT_MS) {
         lastWifiCheck = now;
         if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("[WiFi] Lost connection — reconnecting...");
             state.wifiConnected = false;
             WiFi.reconnect();
             uint32_t t = millis();
             while (WiFi.status() != WL_CONNECTED && millis() - t < 8000) delay(500);
             state.wifiConnected = (WiFi.status() == WL_CONNECTED);
-            if (state.wifiConnected) {
+            if (state.wifiConnected)
                 Serial.printf("[WiFi] Reconnected: %s\n", WiFi.localIP().toString().c_str());
-            }
         } else {
             state.wifiConnected = true;
         }

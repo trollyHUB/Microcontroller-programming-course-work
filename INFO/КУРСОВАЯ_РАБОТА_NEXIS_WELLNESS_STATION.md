@@ -44,6 +44,10 @@
 
 Проверил(а): Байдельдинов М.У., к.т.н., и.о. доцента
 
+Члены комиссии: ________________________
+
+                ________________________
+
 ---
 
 Оценка: ________________ (______________)
@@ -55,6 +59,50 @@
 ---
 
 **Астана, 2026**
+
+---
+
+---
+
+# ЗАДАНИЕ НА КУРСОВОЙ ПРОЕКТ
+
+**НАО «Евразийский национальный университет имени Л.Н. Гумилёва»**
+
+Кафедра компьютерной и программной инженерии
+
+Дисциплина: **PM3304 «Программирование микроконтроллеров»**
+
+---
+
+Студенту: ___________________________________________________
+
+Группа: _______________
+
+**Тема проекта:** «Разработка интеллектуальной IoT-станции мониторинга здоровья на рабочем месте на базе микроконтроллера ESP32»
+
+---
+
+**Теоретическая часть проекта. Перечень вопросов, подлежащих разработке:**
+
+Введение
+
+1. Концепция IoT и анализ существующих решений; выбор и обоснование аппаратной платформы ESP32 и датчиков; протоколы передачи данных; стек веб-технологий
+2. Проектирование и реализация системы: аппаратная схема, прошивка ESP32 (C++/Arduino), веб-дашборд (FastAPI + SQLite + Socket.IO)
+3. Тестирование системы (модульное, интеграционное, нагрузочное) и экономическое обоснование
+
+Заключение
+
+Список литературы
+
+Приложения
+
+---
+
+**Срок сдачи работы студентом:** ______________ 2026 г.
+
+Руководитель работы _________________________ / Байдельдинов М.У. /
+
+Студент _____________________________________ / _____________________ /
 
 ---
 
@@ -96,21 +144,21 @@
 
 **ГЛАВА 3. ТЕСТИРОВАНИЕ И РЕЗУЛЬТАТЫ**
 
-3.1 Методология тестирования .............................................................35
+3.1 Методология тестирования .............................................................38
 
-3.2 Модульное тестирование ................................................................36
+3.2 Модульное тестирование ................................................................40
 
-3.3 Интеграционное и функциональное тестирование ...........................38
+3.3 Интеграционное и функциональное тестирование ...........................42
 
-3.4 Нагрузочное тестирование ..............................................................39
+3.4 Нагрузочное тестирование ..............................................................44
 
-3.5 Экономическое обоснование ...........................................................40
+3.5 Экономическое обоснование ...........................................................45
 
-Заключение ........................................................................................42
+Заключение ........................................................................................47
 
-Список использованной литературы ...................................................44
+Список использованной литературы ...................................................49
 
-Приложения.........................................................................................46
+Приложения.........................................................................................51
 
 ---
 
@@ -1708,27 +1756,35 @@ ESP32 и FastAPI-сервер запускались на 7 суток без п
 
 8. World Health Organization. WHO Guidelines for Indoor Air Quality: Selected Pollutants. — Geneva: WHO Press, 2010. — 484 p.
 
-9. Bosch Sensortec. BME280: Combined Humidity and Pressure Sensor. Data Sheet. BST-BME280-DS002. — 2022. — 57 p.
+9. World Health Organization. WHO Global Air Quality Guidelines: Particulate Matter, Ozone, Nitrogen Dioxide, Sulfur Dioxide and Carbon Monoxide. — Geneva: WHO, 2021. — 290 p.
 
-10. Winsen Electronics. ZM106-B VOC Sensor Module. Product Manual. — 2021. — 12 p.
+10. Srinivasan R., Deepa S. IoT-Based Real-Time Indoor Environmental Monitoring System Using ESP32 and Cloud Platform // IEEE Access. — 2022. — Vol. 10. — P. 45231–45244.
 
-11. ROHM Semiconductor. BH1750FVI: Digital 16bit Serial Output Type Ambient Light Sensor IC. Data Sheet. — 2011. — 14 p.
+11. Bosch Sensortec. BME280: Combined Humidity and Pressure Sensor. Data Sheet. BST-BME280-DS002. — 2022. — 57 p.
 
-12. Aosong Electronics. DHT11: Humidity & Temperature Sensor. Product Manual. — 2019. — 9 p.
+12. Winsen Electronics. ZM106-B VOC Sensor Module. Product Manual. — 2021. — 12 p.
 
-13. Hanwei Electronics. MQ-135 Gas Sensor Technical Data. Data Sheet. — 2015. — 5 p.
+13. ROHM Semiconductor. BH1750FVI: Digital 16bit Serial Output Type Ambient Light Sensor IC. Data Sheet. — 2011. — 14 p.
+
+14. Aosong Electronics. DHT11: Humidity & Temperature Sensor. Product Manual. — 2019. — 9 p.
+
+15. Hanwei Electronics. MQ-135 Gas Sensor Technical Data. Data Sheet. — 2015. — 5 p.
 
 **III. Список сайтов в Интернете**
 
-14. Espressif Systems. ESP32 Technical Reference Manual. Version 5.1. — 2023. — URL: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf (дата обращения: 01.04.2026).
+16. Espressif Systems. ESP32 Technical Reference Manual. Version 5.1. — 2023. — URL: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf (дата обращения: 01.04.2026).
 
-15. PlatformIO. Official Documentation. — 2024. — URL: https://docs.platformio.org/ (дата обращения: 15.03.2026).
+17. PlatformIO. Official Documentation. — 2024. — URL: https://docs.platformio.org/ (дата обращения: 15.03.2026).
 
-16. FastAPI. Official Documentation. — 2024. — URL: https://fastapi.tiangolo.com/ (дата обращения: 15.03.2026).
+18. FastAPI. Official Documentation. — 2024. — URL: https://fastapi.tiangolo.com/ (дата обращения: 15.03.2026).
 
-17. Arduino Foundation. Arduino Language Reference. — 2024. — URL: https://www.arduino.cc/reference/ (дата обращения: 10.03.2026).
+19. Arduino Foundation. Arduino Language Reference. — 2024. — URL: https://www.arduino.cc/reference/ (дата обращения: 10.03.2026).
 
-18. International Labour Organization. Workplace Well-being. — Geneva: ILO, 2019. — URL: https://www.ilo.org/global/topics/safety-and-health-at-work/ (дата обращения: 20.02.2026).
+20. International Labour Organization. Workplace Well-being. — Geneva: ILO, 2019. — URL: https://www.ilo.org/global/topics/safety-and-health-at-work/ (дата обращения: 20.02.2026).
+
+21. Socket.IO. Official Documentation. Version 4. — 2023. — URL: https://socket.io/docs/v4/ (дата обращения: 01.04.2026).
+
+22. Sensirion AG. SCD40/SCD41 CO₂ Sensor. Datasheet. — 2021. — URL: https://sensirion.com/media/documents/48C4B7FB/64C134E7/Sensirion_SCD4x_Datasheet.pdf (дата обращения: 20.03.2026).
 
 ---
 
@@ -1852,6 +1908,10 @@ lib_deps =
 ---
 
 ## ПРИЛОЖЕНИЕ В — Ключевые фрагменты кода ESP32 (main.cpp)
+
+> **Примечание:** В данном приложении представлены ключевые фрагменты прошивки.
+> Полный листинг файла `main.cpp` (≈750 строк) будет добавлен в финальную версию работы
+> после завершения доработки кода.
 
 ### В.1 Инициализация и главный цикл
 
@@ -2181,9 +2241,16 @@ sequenceDiagram
 
 ---
 
-## ПРИЛОЖЕНИЕ Ж — Принципиальная схема устройства
+## ПРИЛОЖЕНИЕ Ж — Функциональная схема подключения компонентов
 
-### Ж.1 Схема подключения компонентов
+> **[ВСТАВИТЬ ИЗОБРАЖЕНИЕ: открыть файл `INFO/NEXIS_scheme.drawio` в app.diagrams.net,
+> экспортировать через File → Export as → PNG (300 DPI, White Background),
+> вставить сюда как рисунок.]**
+>
+> Схема выполнена в draw.io и содержит все 11 компонентов системы с указанием
+> интерфейсов (I2C, UART, ADC, GPIO), номеров выводов и уровней питания (3.3V / 5V).
+
+### Ж.1 Схема подключения компонентов (текстовый вариант)
 
 ```
                             ESP32 DevKit v1
