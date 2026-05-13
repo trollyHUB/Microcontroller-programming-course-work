@@ -1,87 +1,3 @@
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
-#include <BH1750.h>
-
-// Настройки пинов (проверь соответствие со своей сборкой)
-#define PIR_PIN 13      // Датчик движения
-#define SOUND_DIG 12    // Цифровой выход звука (D0)
-#define SOUND_ANA 32    // Аналоговый выход звука (A0)
-
-// Инициализация устройств
-LiquidCrystal_I2C lcd(0x27, 20, 4); // Адрес 0x27, дисплей 20x4
-Adafruit_BME280 bme;               // Климат
-BH1750 lightMeter;                 // Свет
-
-void setup() {
-  Serial.begin(115200);
-  Wire.begin(21, 22); // SDA на 21, SCL на 22
-
-  // Инициализация LCD
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("System Starting...");
-
-  // Инициализация BME280
-  if (!bme.begin(0x76)) {
-    Serial.println("Ошибка BME280! Проверь адрес 0x76/0x77");
-    lcd.setCursor(0, 1);
-    lcd.print("BME280 Error");
-  }
-
-  // Инициализация BH1750
-  if (!lightMeter.begin()) {
-    Serial.println("Ошибка BH1750!");
-    lcd.setCursor(0, 2);
-    lcd.print("BH1750 Error");
-  }
-
-  pinMode(PIR_PIN, INPUT);
-  pinMode(SOUND_DIG, INPUT);
-  
-  delay(2000);
-  lcd.clear();
-}
-
-void loop() {
-  // 1. Читаем датчики
-  float temp = bme.readTemperature();
-  float hum = bme.readHumidity();
-  float lux = lightMeter.readLightLevel();
-  bool motion = digitalRead(PIR_PIN);
-  int soundLevel = analogRead(SOUND_ANA);
-  bool soundDetected = !digitalRead(SOUND_DIG); // D0 обычно инвертирован (LOW при шуме)
-
-  // 2. Вывод в Serial (для отладки)
-  Serial.printf("T:%.1fC | H:%.1f%% | Lux:%.1f | Motion:%d | Sound:%d\n", 
-                temp, hum, lux, motion, soundLevel);
-
-  // 3. Вывод на LCD
-  lcd.setCursor(0, 0);
-  lcd.print("Temp: "); lcd.print(temp, 1); lcd.print(" C  ");
-  
-  lcd.setCursor(0, 1);
-  lcd.print("Hum:  "); lcd.print(hum, 1); lcd.print(" %  ");
-  
-  lcd.setCursor(0, 2);
-  lcd.print("Light: "); lcd.print(lux, 0); lcd.print(" lux ");
-
-  lcd.setCursor(0, 3);
-  if (motion) {
-    lcd.print("MOVE! ");
-  } else {
-    lcd.print("Quiet ");
-  }
-  
-  lcd.print("| Mic: ");
-  lcd.print(soundLevel / 40); // Масштабируем для удобства
-  lcd.print("  ");
-
-  delay(500); // Обновление каждые полсекунды
-}
-
 
 /*
  * ═══════════════════════════════════════════════════════
@@ -105,7 +21,6 @@ void loop() {
  *    BTN2 (Дисплей)  → GPIO33
  * ═══════════════════════════════════════════════════════
  */
-/*
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
