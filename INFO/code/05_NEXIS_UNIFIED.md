@@ -507,12 +507,12 @@ void updateDisplay() {
     case 0:  // Температура + интерпретация
       if (!isnan(sensorTemp)) {
         lcdRow(0, "T:%5.1fC H:%4.0f%%", sensorTemp, sensorHum);
-        if      (sensorTemp < 18)  lcdRow(1, "Холодно         ");
-        else if (sensorTemp < 22)  lcdRow(1, "Прохладно       ");
-        else if (sensorTemp < 26)  lcdRow(1, "Комфортно OK    ");
-        else if (sensorTemp < 28)  lcdRow(1, "Тепло           ");
-        else if (sensorTemp < 30)  lcdRow(1, "Жарко! Проветр. ");
-        else                       lcdRow(1, "!! ПЕРЕГРЕВ !!  ");
+        if      (sensorTemp < 18)  lcdRow(1, "Cold            ");
+        else if (sensorTemp < 22)  lcdRow(1, "Cool            ");
+        else if (sensorTemp < 26)  lcdRow(1, "Comfort OK      ");
+        else if (sensorTemp < 28)  lcdRow(1, "Warm            ");
+        else if (sensorTemp < 30)  lcdRow(1, "Hot! Ventilate  ");
+        else                       lcdRow(1, "!! OVERHEAT !!  ");
       } else {
         lcdPrint("BME280 ERROR    ", "Check I2C 0x76  ");
       }
@@ -522,26 +522,26 @@ void updateDisplay() {
       if (!isnan(sensorPressure)) {
         lcdRow(0, "P:%6.1fhPa     ", sensorPressure);
         const char* ps =
-          sensorPressure < 995  ? "Низк.Циклон    " :
-          sensorPressure < 1010 ? "Ниже нормы     " :
-          sensorPressure < 1022 ? "Норма OK        " : "Высокое        ";
+          sensorPressure < 995  ? "Low. Cyclone    " :
+          sensorPressure < 1010 ? "Below normal    " :
+          sensorPressure < 1022 ? "Normal OK       " : "High pressure  ";
         lcdRow(1, ps);
       } else {
-        lcdPrint("Давление: N/A   ", "BME280?         ");
+        lcdPrint("Pressure: N/A   ", "BME280?         ");
       }
       if (!isnan(sensorDewPoint))
         lcdRow(1, "TD:%4.1fC %s", sensorDewPoint,
-          sensorPressure < 995 ? "Цикл" : sensorPressure < 1022 ? "Норм" : "Высо");
+          sensorPressure < 995 ? "Cycl" : sensorPressure < 1022 ? "Norm" : "High");
       break;
 
     case 2:  // CO₂ + качество воздуха
       if (!isnan(sensorCO2)) {
         lcdRow(0, "CO2: %5.0f ppm  ", sensorCO2);
-        if      (sensorCO2 < 500)  lcdRow(1, "Чистый воздух  ");
-        else if (sensorCO2 < 800)  lcdRow(1, "Норма OK        ");
-        else if (sensorCO2 < 1000) lcdRow(1, "Проветрить!     ");
-        else if (sensorCO2 < 1200) lcdRow(1, "WARN! Откр.окно ");
-        else                       lcdRow(1, "!ОПАСНО! ВОЗДУХ ");
+        if      (sensorCO2 < 500)  lcdRow(1, "Clean air       ");
+        else if (sensorCO2 < 800)  lcdRow(1, "Normal OK       ");
+        else if (sensorCO2 < 1000) lcdRow(1, "Ventilate!      ");
+        else if (sensorCO2 < 1200) lcdRow(1, "WARN! Open win! ");
+        else                       lcdRow(1, "!DANGER! AIR!!! ");
       } else {
         lcdPrint("CO2: N/A        ", "GPIO36 MQ-135   ");
       }
@@ -551,17 +551,17 @@ void updateDisplay() {
       if (!isnan(sensorLight)) {
         lcdRow(0, "Light:%5.0f lux ", sensorLight);
         const char* ls =
-          sensorLight < 50  ? "Очень темно X  " :
-          sensorLight < 150 ? "Слабое свет!   " :
-          sensorLight < 400 ? "Рабочее OK     " : "Яркое          ";
+          sensorLight < 50  ? "Very dark X     " :
+          sensorLight < 150 ? "Low light!      " :
+          sensorLight < 400 ? "Work light OK   " : "Bright          ";
         lcdRow(1, ls);
       } else {
         lcdRow(0, "Light: N/A      ");
       }
       if (!isnan(sensorNoise))
         lcdRow(1, "Noise:%4.0fdB %s", sensorNoise,
-          sensorNoise < 45 ? "Тихо " : sensorNoise < 55 ? "Норма" :
-          sensorNoise < 70 ? "ШУМНО" : "ОПАСН");
+          sensorNoise < 45 ? "Quiet" : sensorNoise < 55 ? "Norm " :
+          sensorNoise < 70 ? "LOUD " : "DNGR!");
       break;
 
     case 4:  // Движение + Wellness + WiFi
@@ -576,11 +576,11 @@ void updateDisplay() {
 
     case 5:  // Pomodoro
       if (pomoMode == POMO_IDLE) {
-        lcdPrint("Pomodoro: IDLE  ", "OK - запустить  ");
+        lcdPrint("Pomodoro: IDLE  ", "OK - to start   ");
       } else {
         lcdRow(0, "Pomo[%s] #%d     ",
           pomoMode == POMO_WORK ? "WORK" : "REST", pomoCycles + 1);
-        lcdRow(1, "Осталось: %02d:%02d ", pomoSecondsLeft / 60, pomoSecondsLeft % 60);
+        lcdRow(1, "Left:  %02d:%02d      ", pomoSecondsLeft / 60, pomoSecondsLeft % 60);
       }
       break;
   }
@@ -914,14 +914,14 @@ void wifiConnect() {
 // ─────────────────────────────────────────────
 void pomoStart() {
   pomoMode = POMO_WORK; pomoStartTime = millis(); pomoSecondsLeft = POMO_WORK_MIN * 60;
-  lcdPrint("Pomodoro START! ", "Работа 25 мин!  ");
+  lcdPrint("Pomodoro START! ", "Work 25 min!    ");
   beepOK(); delay(1000);
   Serial.printf("[Pomo] Старт — цикл #%d\n", pomoCycles + 1);
 }
 
 void pomoStop() {
   pomoMode = POMO_IDLE;
-  lcdPrint("Pomodoro СТОП   ", "                ");
+  lcdPrint("Pomodoro STOP   ", "                ");
   beepOK(); delay(800);
 }
 
@@ -936,7 +936,7 @@ void updatePomodoro() {
       pomoCycles++;
       postPomodoroEvent("work", POMO_WORK_MIN);  // бот сам отобразит статистику
       beepPomoDone();
-      lcdPrint("РАБОТА ЗАВЕРШЕНА", "Перерыв 5 мин! ");
+      lcdPrint("WORK DONE!      ", "Break 5 min!    ");
       delay(2000);
       pomoMode = POMO_BREAK; pomoStartTime = millis(); pomoSecondsLeft = POMO_BREAK_MIN * 60;
     }
@@ -946,7 +946,7 @@ void updatePomodoro() {
     if (left <= 0) {
       postPomodoroEvent("break", POMO_BREAK_MIN);
       beepOK();
-      lcdPrint("Перерыв окончен!", "OK — продолжить ");
+      lcdPrint("Break over!     ", "OK - continue   ");
       pomoMode = POMO_IDLE;
     }
   }
